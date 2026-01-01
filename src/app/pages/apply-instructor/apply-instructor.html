@@ -1,0 +1,72 @@
+<div class="apply-container">
+  <div class="header">
+    <h1><span class="material-icons">assignment</span> Apply as Instructor</h1>
+    <p>Submit your qualifications and supporting documents for approval.</p>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="info">
+        <div class="label">Applicant</div>
+        <div class="value">{{userName}}</div>
+      </div>
+      <div class="info">
+        <div class="label">Email</div>
+        <div class="value">{{userEmail}}</div>
+      </div>
+      <div class="status-pill" [class.pending]="existingStatus==='pending'" [class.approved]="existingStatus==='approved'" [class.rejected]="existingStatus==='rejected'">
+        <span class="material-icons">info</span>
+        <span>Status: {{existingStatus}}</span>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Highest Qualification *</label>
+          <input type="text" [(ngModel)]="form.highestQualification" placeholder="e.g., B.Tech, M.Sc, PhD">
+        </div>
+        <div class="form-group">
+          <label>Years of Experience *</label>
+          <input type="number" min="0" [(ngModel)]="form.yearsOfExperience">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Expertise Areas *</label>
+        <input type="text" [(ngModel)]="form.expertiseAreas" placeholder="e.g., Web Development, Angular, Data Science">
+        <small>Comma-separated is fine</small>
+      </div>
+
+      <div class="form-group">
+        <label>Portfolio / LinkedIn (optional)</label>
+        <input type="url" [(ngModel)]="form.portfolioUrl" placeholder="https://...">
+      </div>
+
+      <div class="form-group">
+        <label>Qualification Documents *</label>
+        <input type="file" multiple (change)="onDocsSelected($event)" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.webp">
+        <small>PDF, DOCX, PPTX, or images. Max 10MB per file.</small>
+
+        <div class="files" *ngIf="selectedFiles.length">
+          <div class="file" *ngFor="let f of selectedFiles">
+            <span class="material-icons">description</span>
+            <span class="name">{{f.name}}</span>
+            <span class="meta">({{(f.size / 1024 / 1024) | number:'1.1-1'}} MB)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-secondary" (click)="back()">
+          <span class="material-icons">arrow_back</span>
+          <span>Back</span>
+        </button>
+        <button type="button" class="btn btn-primary" (click)="submit()" [disabled]="existingStatus==='pending' || existingStatus==='approved'">
+          <span class="material-icons">send</span>
+          <span>{{ existingStatus==='pending' ? 'Already Submitted' : existingStatus==='approved' ? 'Approved' : 'Submit Application' }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

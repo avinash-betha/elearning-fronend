@@ -1,0 +1,208 @@
+<div class="dashboard-container">
+  <div class="welcome-section">
+    <h1>Welcome back, {{userName}}!</h1>
+    <p>Continue your learning journey</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">school</span></div>
+      <div class="stat-content">
+        <h3>{{ enrolledCount }}</h3>
+        <p>Enrolled Courses</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">check_circle</span></div>
+      <div class="stat-content">
+        <h3>{{ completedCount }}</h3>
+        <p>Completed</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">schedule</span></div>
+      <div class="stat-content">
+        <h3>{{ hoursLearned }}</h3>
+        <p>Hours Learned</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">workspace_premium</span></div>
+      <div class="stat-content">
+        <h3>{{ certificatesCount }}</h3>
+        <p>Certificates</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" *ngIf="primaryCourseId">
+    <div class="section-header-row">
+      <h2>Learning upgrades</h2>
+      <span class="muted">Personalized support for {{ primaryCourseTitle }}</span>
+    </div>
+    <div class="upgrade-grid">
+      <a class="upgrade-card" [routerLink]="['/skills-path', primaryCourseId]">
+        <span class="material-icons">route</span>
+        <div class="upgrade-title">Skills assessment</div>
+        <p class="muted">Pre-test, personalized plan, and post-test.</p>
+      </a>
+      <a class="upgrade-card" [routerLink]="['/course-project', primaryCourseId]">
+        <span class="material-icons">assignment</span>
+        <div class="upgrade-title">Completion project</div>
+        <p class="muted">Submit your capstone for rubric scoring.</p>
+      </a>
+      <a class="upgrade-card" [routerLink]="['/cohort', primaryCourseId]">
+        <span class="material-icons">groups</span>
+        <div class="upgrade-title">Cohort mode</div>
+        <p class="muted">Live sessions and peer feedback.</p>
+      </a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header-row">
+      <h2>Momentum Planner</h2>
+      <div class="section-right">
+        <span class="muted">Weekly goal</span>
+        <input class="goal-input" type="number" min="1" max="40" [(ngModel)]="weeklyGoalHours" (change)="saveWeeklyGoal()">
+        <span class="muted">hours</span>
+      </div>
+    </div>
+    <div class="goal-card">
+      <div class="goal-metrics">
+        <div>
+          <div class="goal-value">{{ weeklyProgressHours }}</div>
+          <div class="goal-label">Hours this week</div>
+        </div>
+        <div>
+          <div class="goal-value">{{ weeklyGoalHours }}</div>
+          <div class="goal-label">Goal</div>
+        </div>
+      </div>
+      <div class="progress-bar" aria-label="Weekly goal progress">
+        <div class="progress-fill" [style.width.%]="weeklyProgressPercent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" *ngIf="certificates.length > 0">
+    <div class="section-header-row">
+      <h2>Certificates</h2>
+      <a class="btn-link" [routerLink]="['/profile']">View all</a>
+    </div>
+    <div class="certificate-list">
+      <div class="certificate" *ngFor="let cert of certificates">
+        <div>
+          <div class="certificate-title">{{ cert.courseTitle }}</div>
+          <div class="certificate-meta">Issued {{ cert.issuedAtIso | date: 'mediumDate' }} · Score {{ cert.scorePercent }}%</div>
+          <div class="certificate-id">ID: {{ cert.id }}</div>
+        </div>
+        <button type="button" class="btn btn-secondary" (click)="viewCertificate(cert.id)">
+          <span class="material-icons" aria-hidden="true">verified</span>
+          Verify
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" *ngIf="announcements.length > 0">
+    <div class="section-header-row">
+      <h2>
+        Announcements
+        <span class="pill" *ngIf="unreadAnnouncementsCount > 0">{{ unreadAnnouncementsCount }} new</span>
+      </h2>
+    </div>
+    <div class="announcements-list">
+      <div class="announcement" *ngFor="let a of announcements">
+        <div class="announcement-top">
+          <div class="announcement-title">
+            <span class="material-icons" *ngIf="a.pinned" aria-hidden="true">push_pin</span>
+            <span>{{ a.title }}</span>
+          </div>
+          <button type="button" class="btn-link" (click)="markAnnouncementRead(a.id, $event)">Mark read</button>
+        </div>
+        <p class="announcement-body">{{ a.body }}</p>
+        <div class="announcement-meta">
+          <span class="muted">{{ a.authorRole === 'admin' ? 'Admin' : (a.authorName || 'Instructor') }}</span>
+          <span class="dot" aria-hidden="true">-</span>
+          <span class="muted">{{ a.createdAtIso | date: 'mediumDate' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header-row">
+      <h2>Continue Learning</h2>
+      <div class="section-right">
+        <div class="streak" *ngIf="email && streakDays > 0" aria-label="Learning streak">
+          <span class="material-icons" aria-hidden="true">local_fire_department</span>
+          <span>{{ streakDays }} day streak</span>
+        </div>
+        <a class="btn-link" [routerLink]="['/enrolled-courses']" target="_blank" rel="noopener" *ngIf="hasMoreContinue">View all</a>
+      </div>
+    </div>
+    <div class="courses-list">
+      <div class="empty" *ngIf="continueCourses.length === 0">
+        <p class="muted">No enrolled courses yet.</p>
+        <a class="btn-link" [routerLink]="['/courses']" target="_blank" rel="noopener">Browse courses</a>
+      </div>
+
+      <div class="course-item" *ngFor="let course of continueCourses">
+        <div class="course-info">
+          <h3>{{course.title}}</h3>
+          <p>{{course.instructor}}</p>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="course.progress"></div>
+          </div>
+          <span class="progress-text">{{course.progress}}% complete</span>
+        </div>
+        <button type="button" class="btn btn-primary" (click)="continueCourse(course.id)">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header-row">
+      <h2>Recommended for You</h2>
+      <a class="btn-link" [routerLink]="['/courses']" target="_blank" rel="noopener" *ngIf="hasMoreRecommended">View all</a>
+    </div>
+    <div class="recommended-grid">
+      <div
+        class="recommended-card"
+        *ngFor="let course of recommendedCourses"
+        role="link"
+        tabindex="0"
+        (click)="openCourse(course.id)"
+        (keydown.enter)="openCourse(course.id)"
+        (keydown.space)="openCourse(course.id); $event.preventDefault()"
+        [attr.aria-label]="'View course: ' + course.title"
+      >
+        <div class="course-image" aria-hidden="true"></div>
+        <div class="recommended-body">
+          <div class="recommended-main">
+            <h3>{{course.title}}</h3>
+            <p>{{course.instructor}}</p>
+            <div class="course-meta">
+              <span class="price">{{course.priceLabel}}</span>
+            </div>
+          </div>
+          <div class="recommended-actions" (click)="$event.stopPropagation()">
+            <button type="button" class="btn btn-secondary" *ngIf="!course.isFree" (click)="addToCart(course.id, $event)">
+              <span class="material-icons" aria-hidden="true">add_shopping_cart</span>
+              <span>Add to cart</span>
+            </button>
+            <button type="button" class="btn btn-primary" *ngIf="course.isFree" (click)="openCourse(course.id)">
+              <span class="material-icons" aria-hidden="true">how_to_reg</span>
+              <span>Enroll</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+

@@ -1,0 +1,65 @@
+<div class="skills-path" *ngIf="!loading && assessment">
+  <div class="header">
+    <div>
+      <h1>Skills Assessment Path</h1>
+      <p class="muted">{{ courseTitle }}</p>
+    </div>
+    <a class="btn btn-secondary" [routerLink]="['/courses', courseId]">Back to course</a>
+  </div>
+
+  <div class="card" *ngIf="!hasPreTest">
+    <h2>Pre-test</h2>
+    <p class="muted">Establish your baseline so we can personalize the learning path.</p>
+    <div class="question" *ngFor="let q of assessment.preTest">
+      <div class="prompt">{{ q.prompt }}</div>
+      <div class="options">
+        <label class="option" *ngFor="let opt of q.options; let oi = index">
+          <input type="radio" [name]="q.id" [checked]="preAnswers[q.id] === oi" (change)="preAnswers[q.id] = oi">
+          <span>{{ opt }}</span>
+        </label>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" type="button" (click)="submitPreTest()">Submit pre-test</button>
+    </div>
+  </div>
+
+  <div class="card" *ngIf="hasPreTest">
+    <h2>Your personalized path</h2>
+    <p class="muted">Based on your pre-test, focus on the areas below.</p>
+    <div class="path-list">
+      <div class="path-item" *ngFor="let item of record?.recommendations">
+        <span class="material-icons">track_changes</span>
+        <span>{{ item }}</span>
+      </div>
+    </div>
+    <div class="metrics">
+      <div>
+        <div class="metric-value">{{ record?.preScorePercent }}%</div>
+        <div class="metric-label">Pre-test score</div>
+      </div>
+      <div>
+        <div class="metric-value">{{ record?.weakTags?.length || 0 }}</div>
+        <div class="metric-label">Focus areas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" *ngIf="hasPreTest">
+    <h2>Post-test</h2>
+    <p class="muted">Complete after revisiting the weak areas.</p>
+    <div class="question" *ngFor="let q of assessment.postTest">
+      <div class="prompt">{{ q.prompt }}</div>
+      <div class="options">
+        <label class="option" *ngFor="let opt of q.options; let oi = index">
+          <input type="radio" [name]="q.id" [checked]="postAnswers[q.id] === oi" (change)="postAnswers[q.id] = oi">
+          <span>{{ opt }}</span>
+        </label>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" type="button" (click)="submitPostTest()" [disabled]="hasPostTest">Submit post-test</button>
+      <div class="muted" *ngIf="hasPostTest">Post-test completed: {{ record?.postScorePercent }}%</div>
+    </div>
+  </div>
+</div>

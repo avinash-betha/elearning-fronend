@@ -1,0 +1,213 @@
+<div class="instructor-container">
+  <div class="welcome-section">
+    <h1>Welcome back, {{ userName }}!</h1>
+    <p>Manage your courses and track student progress</p>
+  </div>
+
+  <div class="section-actions">
+    <div class="action-group">
+      <span class="action-label">Export my courses</span>
+      <button class="btn btn-outline" (click)="exportMyCoursesCsv()">
+        <span class="material-icons">download</span>
+        CSV
+      </button>
+      <button class="btn btn-outline" (click)="exportMyCoursesExcel()">
+        <span class="material-icons">grid_on</span>
+        Excel
+      </button>
+    </div>
+    <div class="action-group">
+      <span class="action-label">Export enrollments</span>
+      <button class="btn btn-outline" (click)="exportMyEnrollmentsCsv()">
+        <span class="material-icons">download</span>
+        CSV
+      </button>
+      <button class="btn btn-outline" (click)="exportMyEnrollmentsExcel()">
+        <span class="material-icons">grid_on</span>
+        Excel
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">collections_bookmark</span></div>
+      <div class="stat-content">
+        <h3>{{ totalCourses }}</h3>
+        <p>Total Courses</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">groups</span></div>
+      <div class="stat-content">
+        <h3>{{ totalStudents }}</h3>
+        <p>Total Students</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">star</span></div>
+      <div class="stat-content">
+        <h3>{{ averageRatingLabel }}</h3>
+        <p>Average Rating</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">account_balance_wallet</span></div>
+      <div class="stat-content">
+        <h3>{{ totalRevenueLabel }}</h3>
+        <p>Total Revenue</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>
+        <span class="material-icons" aria-hidden="true">campaign</span>
+        Announcements
+      </h2>
+    </div>
+
+    <div class="announce">
+      <div class="announce-row">
+        <label>
+          Title
+          <input type="text" [(ngModel)]="announcementForm.title" placeholder="e.g., New lesson released" />
+        </label>
+        <label>
+          Course (optional)
+          <select [(ngModel)]="announcementForm.courseId">
+            <option value="">All my students</option>
+            <option *ngFor="let c of myCourseOptions" [value]="c.id">{{ c.title }}</option>
+          </select>
+        </label>
+      </div>
+      <label>
+        Message
+        <textarea rows="3" [(ngModel)]="announcementForm.body" placeholder="Write your announcement..."></textarea>
+      </label>
+      <div class="announce-actions">
+        <label class="checkbox">
+          <input type="checkbox" [(ngModel)]="announcementForm.pinned" />
+          Pin
+        </label>
+        <button class="btn btn-primary" type="button" (click)="postAnnouncement()">
+          <span class="material-icons" aria-hidden="true">send</span>
+          <span>Post</span>
+        </button>
+      </div>
+      <p class="hint">Announcements show on student dashboards (and can be course-targeted).</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Your Courses</h2>
+      <button class="btn btn-primary" (click)="createNewCourse()">
+        <span class="material-icons">add_circle</span>
+        <span>Create New Course</span>
+      </button>
+    </div>
+
+    <div class="courses-table">
+      <div class="table-header">
+        <span>Course</span>
+        <span>Students</span>
+        <span>Status</span>
+        <span>Revenue</span>
+        <span>Actions</span>
+      </div>
+
+      <div class="table-row" *ngFor="let row of myCourses">
+        <span class="course-name">{{ row.course.title }}</span>
+        <span>{{ row.students.toLocaleString() }}</span>
+        <span>{{ row.course.status }}</span>
+        <span class="revenue">{{ row.revenueLabel }}</span>
+        <span class="actions">
+          <button class="btn-small" (click)="editCourse(row)">
+            <span class="material-icons">edit</span>
+            Edit
+          </button>
+          <button class="btn-small" (click)="openAnalyticsModal(row)">
+            <span class="material-icons">analytics</span>
+            Analytics
+          </button>
+          <button class="btn-small danger" (click)="deleteCourse(row)">
+            <span class="material-icons">delete</span>
+            Delete
+          </button>
+        </span>
+      </div>
+
+      <div *ngIf="!myCourses.length" class="empty">
+        No courses yet. Create your first course to get started.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Recent Reviews</h2>
+    <div class="reviews-list">
+      <div
+        class="review-item"
+        *ngFor="let review of reviews"
+        role="button"
+        tabindex="0"
+        (click)="openReviewCourse(review)"
+        (keydown.enter)="openReviewCourse(review)"
+        (keydown.space)="openReviewCourse(review)"
+      >
+        <div class="review-header">
+          <div class="student-info">
+            <strong>{{ review.student }}</strong>
+            <a
+              class="course-title"
+              [routerLink]="['/courses', review.courseId]"
+              (click)="$event.stopPropagation()"
+              >{{ review.course }}</a
+            >
+          </div>
+          <div class="rating"><span class="material-icons">star</span> {{ review.rating }}</div>
+        </div>
+        <p>{{ review.comment }}</p>
+        <span class="review-date">{{ review.date }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Analytics Modal -->
+<div class="modal-overlay" *ngIf="showAnalyticsModal" (click)="closeAnalyticsModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><span class="material-icons">analytics</span> Course Analytics</h2>
+      <button class="modal-close" (click)="closeAnalyticsModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body" *ngIf="analyticsCourse">
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <p class="label">Course</p>
+          <p class="value">{{ analyticsCourse.course.title }}</p>
+        </div>
+        <div class="analytics-card">
+          <p class="label">Students</p>
+          <p class="value">{{ analyticsCourse.students.toLocaleString() }}</p>
+        </div>
+        <div class="analytics-card">
+          <p class="label">Status</p>
+          <p class="value">{{ analyticsCourse.course.status }}</p>
+        </div>
+        <div class="analytics-card">
+          <p class="label">Revenue</p>
+          <p class="value">{{ analyticsCourse.revenueLabel }}</p>
+        </div>
+      </div>
+      <p class="hint">Detailed analytics charts will be connected when backend is integrated.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" (click)="closeAnalyticsModal()">Done</button>
+    </div>
+  </div>
+</div>

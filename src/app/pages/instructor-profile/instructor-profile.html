@@ -1,0 +1,41 @@
+<div class="profile">
+  <div class="card hero">
+    <div class="avatar">
+      <img *ngIf="profilePhotoDataUrl" [src]="profilePhotoDataUrl" alt="Instructor photo">
+      <div *ngIf="!profilePhotoDataUrl" class="placeholder">
+        <span class="material-icons">account_circle</span>
+      </div>
+    </div>
+    <div class="info">
+      <h1>{{ name }}</h1>
+      <p class="email">{{ instructorEmail }}</p>
+      <p class="bio">{{ bio }}</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="material-icons">menu_book</span> Courses</h2>
+
+    <div class="empty" *ngIf="courses.length === 0">
+      No courses found for this instructor yet.
+    </div>
+
+    <div class="courses" *ngIf="courses.length">
+      <div class="course" *ngFor="let c of courses">
+        <div class="title">{{ c.title }}</div>
+        <div class="meta">
+          <span><span class="material-icons">category</span> {{ c.category }}</span>
+          <span><span class="material-icons">star</span> {{ c.rating }}</span>
+          <span><span class="material-icons">people_outline</span> {{ c.students }}</span>
+        </div>
+        <div class="actions">
+          <div class="price">{{ c.price }}</div>
+          <a class="btn" [routerLink]="['/courses', c.id]">
+            <span class="material-icons">visibility</span>
+            View Course
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

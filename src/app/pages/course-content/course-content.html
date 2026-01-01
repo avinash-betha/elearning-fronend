@@ -1,0 +1,261 @@
+<div class="course-content-container">
+  <div class="course-header-bar">
+    <div class="course-title">
+      <a [routerLink]="['/courses', courseId]" class="back-btn"><span class="material-icons">arrow_back</span> Back</a>
+      <h2>{{ courseTitle }}</h2>
+    </div>
+    <div class="access-pill" *ngIf="!isEnrolled">
+      <span class="material-icons" aria-hidden="true">visibility</span>
+      <span>{{ isLoggedIn ? 'Preview mode' : 'Login to unlock' }}</span>
+    </div>
+    <button class="focus-btn" type="button" (click)="toggleFocusMode()">
+      <span class="material-icons">{{ focusMode ? 'fullscreen_exit' : 'fullscreen' }}</span>
+      <span>{{ focusMode ? 'Exit focus' : 'Focus mode' }}</span>
+    </button>
+    <div class="certificate-pill" *ngIf="hasCertificate">
+      <span class="material-icons" aria-hidden="true">workspace_premium</span>
+      <span>Certificate earned</span>
+    </div>
+    <div class="progress-info">
+      <div class="progress-metrics">
+        <span>Progress: {{ progressPercent }}%</span>
+        <span class="progress-count">{{ progressText }}</span>
+      </div>
+      <div class="progress-bar" aria-label="Course progress">
+        <div class="progress-fill" [style.width.%]="progressPercent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-layout" [class.focus-mode]="focusMode">
+    <aside class="sidebar">
+      <h3>Course Content</h3>
+      <div class="curriculum">
+        <div class="module" *ngFor="let module of modules">
+          <div class="module-header">
+            <span class="module-title">{{module.title}}</span>
+            <span class="module-count">{{module.completedLessons}}/{{module.totalLessons}}</span>
+          </div>
+          <div class="lessons">
+            <div class="lesson" *ngFor="let lesson of module.lessons" 
+                 [class.completed]="lesson.completed"
+                 [class.active]="lesson.active"
+                [class.locked]="!canAccessLesson(lesson)"
+                (click)="tryLoadLesson(lesson)">
+              <span class="lesson-icon" aria-hidden="true">
+                <span class="material-icons" *ngIf="lesson.completed">check_circle</span>
+                <span class="material-icons" *ngIf="!lesson.completed && !canAccessLesson(lesson)">lock</span>
+                <span class="material-icons" *ngIf="!lesson.completed && canAccessLesson(lesson)">{{ lesson.type === 'quiz' ? 'quiz' : (lesson.type === 'article' ? 'description' : 'play_circle') }}</span>
+              </span>
+              <span class="lesson-title">{{lesson.title}}</span>
+              <span class="lesson-duration">{{lesson.duration}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="video-area" [class.blurred]="contentBlurred">
+      <div class="video-player" [class.light]="currentLesson?.type !== 'video'">
+        <div class="player-watermark" *ngIf="contentProtected && isLoggedIn">{{ userEmail }}</div>
+        <div class="player-privacy" *ngIf="contentBlurred">
+          <div class="player-privacy-title">Content hidden</div>
+          <div class="player-privacy-sub">Switch back to continue learning</div>
+        </div>
+
+        <!-- HTML5 Video (trackable) -->
+        <video
+          #html5Video
+          *ngIf="currentLesson?.type === 'video' && safeVideoUrl && (currentLesson?.contentType === 'url' || currentLesson?.contentType === 'upload')"
+          class="video-tag"
+          [src]="safeVideoUrl"
+          controls
+          controlsList="nodownload noplaybackrate"
+          disablePictureInPicture
+          playsinline>
+        </video>
+
+        <!-- YouTube/Vimeo Embedded Player -->
+        <iframe
+          #embedIframe
+          *ngIf="currentLesson?.type === 'video' && safeVideoUrl && (currentLesson?.contentType !== 'url' && currentLesson?.contentType !== 'upload')"
+          [src]="safeVideoUrl"
+          frameborder="0"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+          class="video-iframe">
+        </iframe>
+
+        <!-- Article Content -->
+        <div *ngIf="currentLesson?.type === 'article'" class="article-viewer">
+          <div [innerHTML]="currentLesson?.articleContent"></div>
+        </div>
+
+        <!-- Quiz Content -->
+        <div *ngIf="currentLesson?.type === 'quiz'" class="quiz-viewer">
+          <div class="quiz-header">
+            <h3><span class="material-icons">quiz</span> Quiz</h3>
+            <span class="quiz-score" *ngIf="quizSubmitted">Score: {{ quizScoreText }}</span>
+          </div>
+
+          <div class="quiz-empty" *ngIf="quizQuestions.length === 0">
+            No quiz questions yet.
+          </div>
+
+          <div class="quiz" *ngIf="quizQuestions.length">
+            <div class="question" *ngFor="let q of quizQuestions">
+              <div class="prompt">{{ q.prompt }}</div>
+              <div class="options">
+                <label class="option" *ngFor="let opt of q.options; let oi = index" [class.selected]="quizAnswers[q.id] === oi">
+                  <input
+                    type="radio"
+                    [name]="q.id"
+                    [disabled]="quizSubmitted"
+                    [checked]="quizAnswers[q.id] === oi"
+                    (change)="selectQuizAnswer(q.id, oi)" />
+                  <span>{{ opt }}</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="quiz-actions">
+              <button class="btn btn-primary" type="button" (click)="submitQuiz()" [disabled]="quizSubmitted">
+                <span class="material-icons">task_alt</span>
+                Submit
+              </button>
+              <button class="btn btn-secondary" type="button" (click)="retryQuiz()" *ngIf="quizSubmitted">
+                <span class="material-icons">refresh</span>
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fallback for non-video / missing video -->
+        <div
+          *ngIf="!currentLesson || (currentLesson.type === 'video' && !safeVideoUrl) || (currentLesson.type !== 'video' && currentLesson.type !== 'article' && currentLesson.type !== 'quiz')"
+          class="video-placeholder">
+          <div class="play-button"><span class="material-icons">play_circle_filled</span></div>
+          <p *ngIf="!currentLesson">Select a lesson to start</p>
+          <p *ngIf="currentLesson?.type === 'video' && !safeVideoUrl">This lesson has no video source yet</p>
+          <p *ngIf="currentLesson && currentLesson.type !== 'video' && currentLesson.type !== 'article'">This lesson type is coming soon</p>
+        </div>
+      </div>
+
+      <div class="lesson-details">
+        <h1>{{ currentLesson?.title || 'Select a lesson' }}</h1>
+        <div class="lesson-meta">
+          <span>
+            <span class="material-icons">{{ currentLesson?.type === 'article' ? 'description' : (currentLesson?.type === 'quiz' ? 'quiz' : 'videocam') }}</span>
+            {{ currentLesson?.duration || '--:--' }}
+          </span>
+          <span>{{ lastUpdatedText }}</span>
+        </div>
+
+        <div class="lesson-progress" *ngIf="isLoggedIn && currentLesson?.type === 'video'">
+          <div class="lesson-progress-row">
+            <span class="muted">Watched</span>
+            <span class="watched">{{ currentLessonWatchedPercent }}%</span>
+          </div>
+          <div class="progress-bar" aria-label="Lesson watched progress">
+            <div class="progress-fill" [style.width.%]="currentLessonWatchedPercent"></div>
+          </div>
+          <div class="muted small" *ngIf="!canAutoCompleteVideo">Finish the video to complete this lesson.</div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab" [class.active]="selectedTab === 'overview'" (click)="setTab('overview')">Overview</button>
+          <button class="tab" [class.active]="selectedTab === 'resources'" (click)="setTab('resources')">Resources</button>
+          <button class="tab" [class.active]="selectedTab === 'qa'" (click)="setTab('qa')">Q&amp;A</button>
+          <button class="tab" [class.active]="selectedTab === 'notes'" (click)="setTab('notes')">Notes</button>
+          <button class="tab" [class.active]="selectedTab === 'coach'" (click)="setTab('coach')">Coach</button>
+        </div>
+
+        <div class="lesson-content">
+          <ng-container *ngIf="selectedTab === 'overview'">
+            <h3>Lesson Overview</h3>
+            <p *ngIf="!currentLesson">Choose a lesson from the left to see details here.</p>
+            <p *ngIf="currentLesson?.type === 'video'">Watch the video and mark this lesson complete when you're done.</p>
+            <p *ngIf="currentLesson?.type === 'article'">Read the article content above and take notes below.</p>
+            <p *ngIf="currentLesson?.type === 'quiz'">Answer all questions and submit to see your score.</p>
+          </ng-container>
+
+          <ng-container *ngIf="selectedTab === 'resources'">
+            <h3>Resources</h3>
+            <div class="resources">
+              <a href="#" class="resource-link" (click)="$event.preventDefault()"><span class="material-icons">description</span> Lesson slides (PDF)</a>
+              <a href="#" class="resource-link" (click)="$event.preventDefault()"><span class="material-icons">code</span> Code examples</a>
+              <a href="#" class="resource-link" (click)="$event.preventDefault()"><span class="material-icons">assignment</span> Exercise files</a>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="selectedTab === 'qa'">
+            <h3>Q&amp;A</h3>
+            <p>Discussion is coming soon.</p>
+          </ng-container>
+
+          <ng-container *ngIf="selectedTab === 'notes'">
+            <h3>Notes</h3>
+            <p>Personal notes are coming soon.</p>
+          </ng-container>
+
+          <ng-container *ngIf="selectedTab === 'coach'">
+            <h3>AI study plan</h3>
+            <p *ngIf="!studyPlan" class="muted">Enroll to unlock your personalized study plan.</p>
+            <div class="study-plan" *ngIf="studyPlan">
+              <div class="plan-meta">
+                <span class="pill">Focus areas: {{ studyPlan.focusAreas.length }}</span>
+                <span class="muted">Created {{ studyPlan.createdAtIso | date:'mediumDate' }}</span>
+              </div>
+              <div class="plan-sessions">
+                <label class="plan-session" *ngFor="let session of studyPlan.sessions">
+                  <input type="checkbox" [checked]="session.completed" (change)="togglePlanSession(session.id, $any($event.target).checked)">
+                  <div>
+                    <div class="plan-title">{{ session.title }}</div>
+                    <div class="plan-desc">{{ session.description }}</div>
+                  </div>
+                </label>
+              </div>
+              <div class="plan-tips">
+                <h4>Weak-area coaching</h4>
+                <ul>
+                  <li *ngFor="let tip of studyPlan.coachingTips">{{ tip }}</li>
+                </ul>
+              </div>
+              <div class="plan-actions">
+                <a class="btn btn-secondary" [routerLink]="['/skills-path', courseId]">Run skills assessment</a>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <div class="lesson-navigation">
+          <button class="btn btn-secondary" (click)="goToPreviousLesson()" [disabled]="isFirstLesson">
+            <span class="material-icons">arrow_back</span>
+            Previous
+          </button>
+          <button class="btn btn-secondary" type="button" (click)="goToFinalExam()" [disabled]="!isCourseCompleted" *ngIf="!hasCertificate">
+            <span class="material-icons">assignment_turned_in</span>
+            Final exam
+          </button>
+          <button class="btn btn-secondary" type="button" (click)="openCertificate()" *ngIf="hasCertificate">
+            <span class="material-icons">verified</span>
+            View certificate
+          </button>
+          <button class="btn btn-secondary" (click)="markLessonComplete(currentLesson!)" [disabled]="!currentLesson || !canMarkCurrentLessonComplete">
+            <span class="material-icons">check_circle</span>
+            Mark as Complete
+          </button>
+          <button class="btn btn-primary" (click)="goToNextLesson()" [disabled]="isLastLesson">
+            <span class="material-icons">arrow_forward</span>
+            Next
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+
+
+

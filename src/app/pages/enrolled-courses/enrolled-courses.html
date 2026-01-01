@@ -1,0 +1,110 @@
+<div class="enrolled-container">
+  <h1>My Enrolled Courses</h1>
+  <p class="subtitle">Track your progress and continue learning</p>
+
+  <div class="empty-state" *ngIf="!email">
+    <p>Please sign in to view your enrolled courses.</p>
+    <a class="btn btn-primary" [routerLink]="['/login']">Go to Login</a>
+  </div>
+
+  <div class="empty-state" *ngIf="email && enrolledCourses.length === 0">
+    <p>You don't have any enrollments yet.</p>
+    <a class="btn btn-primary" [routerLink]="['/courses']">Browse Courses</a>
+  </div>
+
+  <div class="courses-grid" *ngIf="email && enrolledCourses.length > 0">
+    <div
+      class="course-card"
+      role="button"
+      tabindex="0"
+      *ngFor="let course of enrolledCourses"
+      (click)="continueCourse(course)"
+      (keydown.enter)="continueCourse(course)"
+      (keydown.space)="continueCourse(course); $event.preventDefault()"
+      [attr.aria-label]="(course.progress === 100 ? 'Review course: ' : 'Continue course: ') + course.title"
+    >
+      <div class="course-header">
+        <div class="course-image"></div>
+        <span class="status-badge" [class.completed]="course.progress === 100">
+          {{course.progress === 100 ? 'Completed' : 'In Progress'}}
+        </span>
+      </div>
+      <div class="course-content">
+        <h3>{{course.title}}</h3>
+        <p class="instructor">by {{course.instructor}}</p>
+        <div class="certificate-chip" *ngIf="course.hasCertificate">
+          <span class="material-icons" aria-hidden="true">verified</span>
+          Certificate earned
+        </div>
+        
+        <div class="progress-section">
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="course.progress"></div>
+          </div>
+          <span class="progress-text">{{course.progress}}% complete</span>
+        </div>
+
+        <div class="course-stats">
+          <span><span class="material-icons">play_circle_outline</span> {{course.completedLessons}}/{{course.totalLessons}} lessons</span>
+          <span><span class="material-icons">access_time</span> {{course.timeSpentHours}} hours</span>
+        </div>
+
+        <div class="course-actions" (click)="$event.stopPropagation()">
+          <button class="btn btn-primary" type="button" (click)="continueCourse(course)">
+            {{course.progress === 100 ? 'Review Course' : 'Continue Learning'}}
+          </button>
+          <button class="btn btn-secondary" type="button" *ngIf="course.isCompleted && !course.hasCertificate" (click)="takeFinalExam(course, $event)">
+            Take final exam
+          </button>
+          <button class="btn btn-outline" type="button" *ngIf="course.hasCertificate" (click)="viewCertificate(course, $event)">
+            View certificate
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="recommended" *ngIf="email && recommendedCourses.length > 0">
+    <div class="recommended-header">
+      <h2>Recommended for You</h2>
+      <a class="btn-link" [routerLink]="['/courses']" target="_blank" rel="noopener" *ngIf="hasMoreRecommended">View all</a>
+    </div>
+
+    <div class="recommended-grid">
+      <div
+        class="recommended-card"
+        *ngFor="let course of recommendedCourses"
+        role="link"
+        tabindex="0"
+        (click)="openCourse(course.id)"
+        (keydown.enter)="openCourse(course.id)"
+        (keydown.space)="openCourse(course.id); $event.preventDefault()"
+        [attr.aria-label]="'View course: ' + course.title"
+      >
+        <div class="course-image" aria-hidden="true"></div>
+        <div class="recommended-body">
+          <div class="recommended-main">
+            <h3>{{course.title}}</h3>
+            <p>{{course.instructor}}</p>
+            <div class="course-meta">
+              <span class="price">{{course.priceLabel}}</span>
+            </div>
+          </div>
+
+          <div class="recommended-actions" (click)="$event.stopPropagation()">
+            <button type="button" class="btn btn-secondary" *ngIf="!course.isFree" (click)="addToCart(course.id, $event)">
+              <span class="material-icons" aria-hidden="true">add_shopping_cart</span>
+              <span>Add to cart</span>
+            </button>
+            <button type="button" class="btn btn-primary" *ngIf="course.isFree" (click)="openCourse(course.id)">
+              <span class="material-icons" aria-hidden="true">how_to_reg</span>
+              <span>Enroll</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

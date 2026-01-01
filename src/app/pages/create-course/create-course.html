@@ -1,0 +1,354 @@
+<div class="create-course-container">
+  <div class="header">
+    <h1><span class="material-icons">add_circle</span> Create New Course</h1>
+    <p>Fill in the details to create and publish your course</p>
+  </div>
+
+  <form class="course-form">
+    <!-- Basic Information -->
+    <div class="form-section">
+      <h2><span class="material-icons">info</span> Basic Information</h2>
+      
+      <div class="form-group">
+        <label for="title">Course Title *</label>
+        <input 
+          type="text" 
+          id="title" 
+          [(ngModel)]="course.title" 
+          name="title"
+          placeholder="e.g., Complete Web Development Bootcamp"
+          required>
+      </div>
+
+      <div class="form-group">
+        <label for="subtitle">Course Subtitle</label>
+        <input 
+          type="text" 
+          id="subtitle" 
+          [(ngModel)]="course.subtitle" 
+          name="subtitle"
+          placeholder="A brief, catchy description">
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description *</label>
+        <textarea 
+          id="description" 
+          [(ngModel)]="course.description" 
+          name="description"
+          placeholder="Describe what students will learn in this course..."
+          rows="5"
+          required></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category">Category *</label>
+          <select id="category" [(ngModel)]="course.category" name="category" required>
+            <option value="">Select a category</option>
+            <option *ngFor="let cat of categories" [value]="cat">{{cat}}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="level">Level *</label>
+          <select id="level" [(ngModel)]="course.level" name="level" required>
+            <option *ngFor="let lvl of levels" [value]="lvl">{{lvl | titlecase}}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="price">Price (USD) *</label>
+          <input 
+            type="number" 
+            id="price" 
+            [(ngModel)]="course.price" 
+            name="price"
+            placeholder="49.99"
+            min="0"
+            step="0.01"
+            required>
+        </div>
+
+        <div class="form-group">
+          <label for="language">Language</label>
+          <input 
+            type="text" 
+            id="language" 
+            [(ngModel)]="course.language" 
+            name="language"
+            value="English">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="thumbnail">Course Thumbnail *</label>
+        <input 
+          type="file" 
+          id="thumbnail" 
+          (change)="onThumbnailSelect($event)"
+          accept="image/*">
+        <small>Recommended: 1920x1080px (16:9 ratio), Max 5MB</small>
+        <div *ngIf="course.thumbnailPreview" class="image-preview">
+          <img [src]="course.thumbnailPreview" alt="Thumbnail preview">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Course Preview Video (Optional)</label>
+        <div class="video-input-options">
+          <select [(ngModel)]="course.previewVideoType" name="previewVideoType" class="type-select">
+            <option value="upload">Upload Video File</option>
+            <option value="youtube">YouTube Link</option>
+            <option value="vimeo">Vimeo Link</option>
+            <option value="url">Direct Video URL</option>
+          </select>
+
+          <input 
+            *ngIf="course.previewVideoType === 'upload'"
+            type="file" 
+            (change)="onPreviewVideoSelect($event)"
+            accept="video/*">
+
+          <input 
+            *ngIf="course.previewVideoType !== 'upload'"
+            type="text"
+            [(ngModel)]="course.previewVideoUrl"
+            name="previewVideoUrl"
+            [placeholder]="course.previewVideoType === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 
+                          course.previewVideoType === 'vimeo' ? 'https://vimeo.com/...' : 
+                          'https://example.com/video.mp4'"
+            class="url-input">
+        </div>
+        <small>Preview video helps students decide to enroll. Max 500MB for uploads.</small>
+      </div>
+    </div>
+
+    <!-- What Students Will Learn -->
+    <div class="form-section">
+      <h2><span class="material-icons">check_circle</span> What Students Will Learn</h2>
+      
+      <div class="dynamic-list">
+        <div class="list-item" *ngFor="let point of course.learningPoints; let i = index">
+          <span class="material-icons">check</span>
+          <input 
+            type="text" 
+            [(ngModel)]="course.learningPoints[i]" 
+            [name]="'learning-' + i"
+            placeholder="e.g., Build responsive websites using HTML, CSS, and JavaScript">
+          <button type="button" class="btn-icon" (click)="removeLearningPoint(i)" *ngIf="course.learningPoints.length > 1">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <button type="button" class="btn-add" (click)="addLearningPoint()">
+          <span class="material-icons">add</span> Add Learning Point
+        </button>
+      </div>
+    </div>
+
+    <!-- Requirements -->
+    <div class="form-section">
+      <h2><span class="material-icons">assignment</span> Requirements</h2>
+      
+      <div class="dynamic-list">
+        <div class="list-item" *ngFor="let req of course.requirements; let i = index">
+          <span class="material-icons">arrow_right</span>
+          <input 
+            type="text" 
+            [(ngModel)]="course.requirements[i]" 
+            [name]="'requirement-' + i"
+            placeholder="e.g., Basic computer skills required">
+          <button type="button" class="btn-icon" (click)="removeRequirement(i)" *ngIf="course.requirements.length > 1">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <button type="button" class="btn-add" (click)="addRequirement()">
+          <span class="material-icons">add</span> Add Requirement
+        </button>
+      </div>
+    </div>
+
+    <!-- Curriculum -->
+    <div class="form-section">
+      <h2><span class="material-icons">menu_book</span> Course Curriculum</h2>
+      
+      <div class="curriculum-builder">
+        <div class="section-block" *ngFor="let section of course.curriculum; let si = index">
+          <div class="section-header">
+            <input 
+              type="text" 
+              [(ngModel)]="section.sectionTitle" 
+              [name]="'section-' + si"
+              placeholder="Section Title (e.g., Getting Started)"
+              class="section-title-input">
+            <button type="button" class="btn-icon" (click)="removeSection(si)" *ngIf="course.curriculum.length > 1">
+              <span class="material-icons">delete</span>
+            </button>
+          </div>
+
+          <div class="lectures-list">
+            <div class="lecture-item" *ngFor="let lecture of section.lectures; let li = index">
+              <div class="lecture-header">
+                <span class="material-icons">{{lecture.type === 'video' ? 'play_circle_outline' : 
+                                                lecture.type === 'article' ? 'description' : 
+                                                lecture.type === 'quiz' ? 'quiz' : 'attachment'}}</span>
+                <input 
+                  type="text" 
+                  [(ngModel)]="lecture.title" 
+                  [name]="'lecture-title-' + si + '-' + li"
+                  placeholder="Lecture Title"
+                  class="lecture-input">
+                <input 
+                  type="text" 
+                  [(ngModel)]="lecture.duration" 
+                  [name]="'lecture-duration-' + si + '-' + li"
+                  placeholder="Duration (e.g., 10:30)"
+                  class="duration-input">
+                <select [(ngModel)]="lecture.type" [name]="'lecture-type-' + si + '-' + li" class="type-select">
+                  <option value="video">Video</option>
+                  <option value="article">Article</option>
+                  <option value="quiz">Quiz</option>
+                  <option value="resource">Resource</option>
+                </select>
+                <label class="free-checkbox">
+                  <input 
+                    type="checkbox" 
+                    [(ngModel)]="lecture.isFree" 
+                    [name]="'lecture-free-' + si + '-' + li">
+                  <span>Free Preview</span>
+                </label>
+                <button type="button" class="btn-icon" (click)="removeLecture(si, li)" *ngIf="section.lectures.length > 1">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+
+              <!-- Video Content Options -->
+              <div *ngIf="lecture.type === 'video'" class="lecture-content">
+                <div class="video-source-options">
+                  <select [(ngModel)]="lecture.contentType" [name]="'content-type-' + si + '-' + li" class="content-type-select">
+                    <option value="upload">Upload Video</option>
+                    <option value="youtube">YouTube Link</option>
+                    <option value="vimeo">Vimeo Link</option>
+                    <option value="url">Video URL</option>
+                  </select>
+
+                  <input 
+                    *ngIf="lecture.contentType === 'upload'"
+                    type="file" 
+                    (change)="onLectureVideoSelect($event, si, li)"
+                    accept="video/*"
+                    class="file-input">
+
+                  <input 
+                    *ngIf="lecture.contentType !== 'upload'"
+                    type="text"
+                    [(ngModel)]="lecture.videoUrl"
+                    [name]="'video-url-' + si + '-' + li"
+                    [placeholder]="lecture.contentType === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 
+                                  lecture.contentType === 'vimeo' ? 'https://vimeo.com/...' : 
+                                  'https://example.com/video.mp4'"
+                    class="url-input">
+
+                  <span *ngIf="lecture.videoFile" class="file-name">
+                    <span class="material-icons">videocam</span>
+                    {{lecture.videoFile.name}}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Article Content -->
+              <div *ngIf="lecture.type === 'article'" class="lecture-content">
+                <textarea 
+                  [(ngModel)]="lecture.articleContent" 
+                  [name]="'article-content-' + si + '-' + li"
+                  placeholder="Write article content here... (supports HTML)"
+                  rows="4"
+                  class="article-textarea"></textarea>
+              </div>
+
+              <!-- Resource Content -->
+              <div *ngIf="lecture.type === 'resource'" class="lecture-content">
+                <input 
+                  type="file" 
+                  (change)="onResourceFileSelect($event, si, li)"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.zip"
+                  class="file-input">
+                <small>Supported: PDF, DOCX, PPTX, ZIP (Max 50MB)</small>
+                <span *ngIf="lecture.resourceFile" class="file-name">
+                  <span class="material-icons">attachment</span>
+                  {{lecture.resourceFile.name}}
+                </span>
+              </div>
+            </div>
+            <button type="button" class="btn-add-small" (click)="addLecture(si)">
+              <span class="material-icons">add</span> Add Lecture
+            </button>
+          </div>
+        </div>
+
+        <button type="button" class="btn-add" (click)="addSection()">
+          <span class="material-icons">add</span> Add Section
+        </button>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="cancel()">
+        <span class="material-icons">cancel</span> Cancel
+      </button>
+      <button type="button" class="btn btn-outline" (click)="saveDraft()">
+        <span class="material-icons">save</span> Save Draft
+      </button>
+      <button type="button" class="btn btn-primary" (click)="submitForReview()">
+        <span class="material-icons">send</span> Submit for Review
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Submit for Review Confirm Modal -->
+<div class="modal-overlay" *ngIf="showSubmitConfirmModal" (click)="closeSubmitConfirmModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><span class="material-icons">check_circle</span> Submit for Review</h2>
+      <button type="button" class="modal-close" (click)="closeSubmitConfirmModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="warning-text">
+        <span class="material-icons">info</span>
+        Are you sure you want to submit this course for review? You won't be able to edit it until it's reviewed.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" (click)="closeSubmitConfirmModal()">Cancel</button>
+      <button type="button" class="btn-primary" (click)="confirmSubmitForReview()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Confirm Modal -->
+<div class="modal-overlay" *ngIf="showCancelConfirmModal" (click)="closeCancelConfirmModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><span class="material-icons">warning</span> Discard Changes</h2>
+      <button type="button" class="modal-close" (click)="closeCancelConfirmModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="warning-text">
+        <span class="material-icons">warning</span>
+        Are you sure you want to cancel? All unsaved changes will be lost.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" (click)="closeCancelConfirmModal()">Keep Editing</button>
+      <button type="button" class="btn-danger" (click)="confirmCancel()">Discard</button>
+    </div>
+  </div>
+</div>

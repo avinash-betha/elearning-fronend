@@ -1,0 +1,183 @@
+<div class="support-chat">
+  <div class="header">
+    <div>
+      <h2>Support Chat</h2>
+      <p class="sub">
+        Reach platform support as a {{ roleLabel }}
+        <span class="live" aria-label="Live auto-refresh enabled">
+          <span class="dot" aria-hidden="true"></span>
+          Live
+        </span>
+        <span class="sync" *ngIf="lastSyncAtIso">Updated {{ lastSyncAtIso | date:'shortTime' }}</span>
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-mini" type="button" (click)="manualRefresh()">
+        <span class="material-icons" aria-hidden="true">refresh</span>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="stats" *ngIf="role === 'admin'">
+    <div class="stat-card">
+      <div class="label">Open</div>
+      <div class="value">{{ openCount }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Pending</div>
+      <div class="value">{{ pendingCount }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Resolved</div>
+      <div class="value">{{ resolvedCount }}</div>
+    </div>
+  </div>
+
+  <div class="layout" *ngIf="role === 'admin'; else requesterView">
+    <aside class="threads" aria-label="Support threads">
+      <h3>Threads</h3>
+
+      <div class="thread-filters">
+        <input
+          type="text"
+          class="input"
+          placeholder="Search by name or email"
+          [(ngModel)]="searchQuery"
+        />
+        <div class="filter-row">
+          <button class="chip" [class.active]="statusFilter === 'all'" (click)="statusFilter = 'all'">All</button>
+          <button class="chip" [class.active]="statusFilter === 'open'" (click)="statusFilter = 'open'">Open</button>
+          <button class="chip" [class.active]="statusFilter === 'pending'" (click)="statusFilter = 'pending'">Pending</button>
+          <button class="chip" [class.active]="statusFilter === 'resolved'" (click)="statusFilter = 'resolved'">Resolved</button>
+        </div>
+      </div>
+
+      <div class="empty" *ngIf="filteredThreads.length === 0">No threads yet</div>
+
+      <button
+        class="thread"
+        type="button"
+        *ngFor="let t of filteredThreads"
+        (click)="selectThread(t)"
+        [class.active]="selectedThread?.id === t.id"
+      >
+        <div class="row">
+          <div class="title">{{ t.requesterName }} ({{ t.requesterRole }})</div>
+          <div class="status" [class.resolved]="t.status === 'RESOLVED'">{{ t.status }}</div>
+        </div>
+        <div class="meta">{{ t.requesterEmail }}</div>
+        <div class="meta" *ngIf="t.updatedAtIso">Last: {{ t.updatedAtIso | date:'short' }}</div>
+        <div class="meta" *ngIf="t.courseId">Course: {{ t.courseId }}</div>
+        <div class="meta unread" *ngIf="t.unreadForAdmin">Unread</div>
+      </button>
+    </aside>
+
+    <section class="chat" aria-label="Thread messages">
+      <div class="chat-header" *ngIf="selectedThread; else noThread">
+        <div class="chat-title">
+          <div class="primary">{{ selectedThread.requesterName }} ({{ selectedThread.requesterRole }})</div>
+          <div class="secondary">{{ selectedThread.requesterEmail }}</div>
+        </div>
+
+        <div class="chat-actions">
+          <div class="course-link">
+            <input
+              class="input"
+              type="text"
+              placeholder="Course ID"
+              [(ngModel)]="courseLinkId"
+            />
+            <button class="btn btn-mini" type="button" (click)="saveCourseLink()">Link</button>
+            <button class="btn btn-mini" type="button" (click)="openCourseReview()">Reviews</button>
+          </div>
+          <button class="btn" type="button" (click)="markResolved()" [disabled]="selectedThread.status === 'RESOLVED'">
+            Mark resolved
+          </button>
+        </div>
+      </div>
+
+      <ng-template #noThread>
+        <div class="empty">Select a thread to start</div>
+      </ng-template>
+
+      <div class="messages" *ngIf="selectedThread" #messagesPane>
+        <div class="msg" *ngFor="let m of messages" [class.me]="m.fromRole === role">
+          <div class="bubble">
+            <div class="meta">
+              <span class="who">{{ m.fromName || m.fromRole }}</span>
+              <span class="when">{{ m.sentAtIso | date:'short' }}</span>
+            </div>
+            <div class="body">{{ m.body }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-replies" *ngIf="selectedThread">
+        <button class="chip" type="button" *ngFor="let qr of quickReplies" (click)="applyQuickReply(qr.text)">
+          {{ qr.label }}
+        </button>
+      </div>
+
+      <form class="composer" (ngSubmit)="send()" *ngIf="selectedThread">
+        <input
+          name="message"
+          [(ngModel)]="messageText"
+          placeholder="Type a message..."
+          required
+          autocomplete="off"
+        />
+        <button class="btn" type="submit" [disabled]="!messageText.trim()">Send</button>
+      </form>
+    </section>
+  </div>
+
+  <ng-template #requesterView>
+    <section class="chat" aria-label="Support conversation" *ngIf="email; else signIn">
+      <div class="chat-header">
+        <div class="chat-title">
+          <div class="primary">Your support thread</div>
+          <div class="secondary">Support will respond as soon as possible</div>
+        </div>
+      </div>
+
+      <div class="messages" #messagesPane>
+        <div class="msg" *ngFor="let m of messages" [class.me]="m.fromRole === role">
+          <div class="bubble">
+            <div class="meta">
+              <span class="who">{{ m.fromName || m.fromRole }}</span>
+              <span class="when">{{ m.sentAtIso | date:'short' }}</span>
+            </div>
+            <div class="body">{{ m.body }}</div>
+          </div>
+        </div>
+
+        <div class="empty" *ngIf="messages.length === 0">Start the conversation by sending a message.</div>
+      </div>
+
+      <form class="composer" (ngSubmit)="send()">
+        <input
+          name="message"
+          [(ngModel)]="messageText"
+          placeholder="Type a message..."
+          required
+          autocomplete="off"
+        />
+        <button class="btn" type="submit" [disabled]="!messageText.trim()">Send</button>
+      </form>
+    </section>
+
+    <ng-template #signIn>
+      <div class="empty">
+        <div>
+          <div class="primary">Please sign in to contact support</div>
+          <div class="secondary">You will be able to message support from your account.</div>
+        </div>
+        <a class="btn" [routerLink]="['/login']">Go to Login</a>
+      </div>
+    </ng-template>
+  </ng-template>
+</div>
+
+
+

@@ -1,0 +1,74 @@
+<div class="courses-container">
+  <div class="header">
+    <h1>Browse Courses</h1>
+    <p>Explore our wide range of courses and start learning today</p>
+    <a
+      class="view-all"
+      [routerLink]="['/courses']"
+      [queryParams]="{ all: 1, category: activeFilter }"
+      target="_blank"
+      rel="noopener"
+      *ngIf="hasMore && !showAll"
+    >
+      View all
+    </a>
+  </div>
+
+  <div class="filters">
+    <button type="button" class="filter-btn" [class.active]="activeFilter === 'All'" (click)="filterCourses('All')">
+      <span class="material-icons">apps</span>
+      <span>All</span>
+    </button>
+    <button type="button" class="filter-btn" [class.active]="activeFilter === 'Development'" (click)="filterCourses('Development')">
+      <span class="material-icons">code</span>
+      <span>Development</span>
+    </button>
+    <button type="button" class="filter-btn" [class.active]="activeFilter === 'Design'" (click)="filterCourses('Design')">
+      <span class="material-icons">palette</span>
+      <span>Design</span>
+    </button>
+    <button type="button" class="filter-btn" [class.active]="activeFilter === 'Business'" (click)="filterCourses('Business')">
+      <span class="material-icons">business_center</span>
+      <span>Business</span>
+    </button>
+    <button type="button" class="filter-btn" [class.active]="activeFilter === 'Marketing'" (click)="filterCourses('Marketing')">
+      <span class="material-icons">campaign</span>
+      <span>Marketing</span>
+    </button>
+  </div>
+
+  <div class="courses-grid">
+    <a
+      class="course-card"
+      *ngFor="let course of visibleCourses"
+      [routerLink]="['/courses', course.id]"
+      [attr.aria-label]="'View course: ' + course.title"
+    >
+      <div class="course-image">
+        <span class="category">{{course.category}}</span>
+      </div>
+      <div class="course-content">
+        <h3>{{course.title}}</h3>
+        <p class="instructor">by {{course.instructor}}</p>
+        <p class="description">{{course.description}}</p>
+        <div class="course-footer">
+          <div class="rating">
+            <span class="material-icons">star</span>
+            <span *ngIf="course.ratingCount > 0">{{course.rating}}</span>
+            <span *ngIf="course.ratingCount === 0">New</span>
+            <span class="rating-count" *ngIf="course.ratingCount > 0">({{course.ratingCount}})</span>
+            <span class="students-count">
+              <span class="material-icons">people_outline</span>
+              {{course.students}}
+            </span>
+          </div>
+          <div class="price">{{course.price}}</div>
+        </div>
+        <div class="btn btn-primary" aria-hidden="true">
+          <span class="material-icons">visibility</span>
+          <span>View Details</span>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>

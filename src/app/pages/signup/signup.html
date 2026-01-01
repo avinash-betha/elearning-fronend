@@ -1,0 +1,83 @@
+<div class="signup-container">
+  <div class="signup-card">
+    <h2>Create Your Account</h2>
+    <p class="subtitle">Join us and start learning today</p>
+    
+    <!-- Error Message -->
+    <div class="alert alert-error" *ngIf="errorMessage">
+      <span class="material-icons">error</span>
+      {{errorMessage}}
+    </div>
+    
+    <form (ngSubmit)="onSignup()" #signupForm="ngForm">
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input 
+          type="text" 
+          id="name" 
+          [(ngModel)]="name" 
+          name="name"
+          placeholder="Enter your full name"
+          #nameField="ngModel"
+          required
+          minlength="2">
+        <div class="error-message" *ngIf="nameField.invalid && (nameField.dirty || nameField.touched)">
+          <span *ngIf="nameField.errors?.['required']">Name is required</span>
+          <span *ngIf="nameField.errors?.['minlength']">Name must be at least 2 characters</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          [(ngModel)]="email" 
+          name="email"
+          placeholder="Enter your email"
+          #emailField="ngModel"
+          required
+          email>
+        <div class="error-message" *ngIf="emailField.invalid && (emailField.dirty || emailField.touched)">
+          <span *ngIf="emailField.errors?.['required']">Email is required</span>
+          <span *ngIf="emailField.errors?.['email']">Please enter a valid email</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          [(ngModel)]="password" 
+          name="password"
+          placeholder="Create a password (min 6 characters)"
+          #passwordField="ngModel"
+          required
+          minlength="6">
+        <div class="error-message" *ngIf="passwordField.invalid && (passwordField.dirty || passwordField.touched)">
+          <span *ngIf="passwordField.errors?.['required']">Password is required</span>
+          <span *ngIf="passwordField.errors?.['minlength']">Password must be at least 6 characters</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="role">I am a:</label>
+        <select id="role" [(ngModel)]="role" name="role" class="role-select">
+          <option value="student">Student - Learn new skills</option>
+          <option value="instructor">Instructor - Teach courses</option>
+        </select>
+      </div>
+      
+      <button type="submit" class="btn btn-primary" [disabled]="signupForm.invalid || isSubmitting">
+        <span class="material-icons" *ngIf="!isSubmitting">person_add</span>
+        <span class="material-icons spin" *ngIf="isSubmitting">autorenew</span>
+        {{ isSubmitting ? 'Creating account...' : 'Sign Up' }}
+      </button>
+    </form>
+    
+    <p class="footer-text">
+      Already have an account? <a routerLink="/login">Login</a>
+    </p>
+  </div>
+</div>

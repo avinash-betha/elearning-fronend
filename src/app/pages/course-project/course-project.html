@@ -1,0 +1,114 @@
+<div class="project-page">
+  <div class="header">
+    <div>
+      <h1>Completion Project</h1>
+      <p class="muted">{{ courseTitle }}</p>
+    </div>
+    <a class="btn btn-secondary" [routerLink]="['/courses', courseId]">Back to course</a>
+  </div>
+
+  <div class="card" *ngIf="userRole === 'student'">
+    <h2>Project brief</h2>
+    <p class="muted">Submit a real-world project for instructor review and rubric scoring.</p>
+
+    <div *ngIf="!submission">
+      <div class="form-group">
+        <label>Project title</label>
+        <input type="text" [(ngModel)]="form.title" placeholder="e.g., Portfolio site or analytics report">
+      </div>
+      <div class="form-group">
+        <label>Project summary</label>
+        <textarea [(ngModel)]="form.description" placeholder="Describe your approach, key decisions, and outcomes"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Attachments (images)</label>
+        <label class="btn btn-secondary">
+          <span class="material-icons">attach_file</span>
+          <span>Upload</span>
+          <input type="file" accept="image/*" multiple hidden (change)="onFilesSelected($event)">
+        </label>
+        <div class="attachment-list" *ngIf="attachments.length">
+          <div class="attachment" *ngFor="let att of attachments; let i = index">
+            <img [src]="att.dataUrl" [alt]="att.name">
+            <button type="button" class="attachment-remove" (click)="removeAttachment(i)">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" type="button" (click)="submitProject()">Submit project</button>
+    </div>
+
+    <div *ngIf="submission" class="status-card">
+      <div class="status-head">
+        <h3>{{ submission.title }}</h3>
+        <span class="pill">{{ submission.status }}</span>
+      </div>
+      <p class="muted">{{ submission.description }}</p>
+      <div class="attachment-list" *ngIf="submission.attachments.length">
+        <div class="attachment" *ngFor="let att of submission.attachments">
+          <img [src]="att.dataUrl" [alt]="att.name">
+        </div>
+      </div>
+      <div class="rubric" *ngIf="submission.reviewedAtIso">
+        <h4>Rubric score: {{ totalRubricScore(submission.rubric) }}</h4>
+        <div class="rubric-row" *ngFor="let item of submission.rubric">
+          <span>{{ item.criterion }}</span>
+          <span>{{ item.score || 0 }}/{{ item.maxScore }}</span>
+        </div>
+        <p class="muted" *ngIf="submission.instructorNotes">Instructor notes: {{ submission.instructorNotes }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" *ngIf="userRole !== 'student'">
+    <h2>Instructor review</h2>
+    <div class="review-grid">
+      <div class="submission-list">
+        <div class="submission-item" *ngFor="let sub of allSubmissions" (click)="selectSubmission(sub)">
+          <div>
+            <strong>{{ sub.title }}</strong>
+            <div class="muted">{{ sub.name }} · {{ sub.status }}</div>
+          </div>
+          <span class="muted">{{ sub.submittedAtIso | date:'mediumDate' }}</span>
+        </div>
+        <p class="muted" *ngIf="allSubmissions.length === 0">No submissions yet.</p>
+      </div>
+
+      <div class="submission-detail" *ngIf="selectedSubmission">
+        <h3>{{ selectedSubmission.title }}</h3>
+        <p class="muted">{{ selectedSubmission.description }}</p>
+        <div class="attachment-list" *ngIf="selectedSubmission.attachments.length">
+          <div class="attachment" *ngFor="let att of selectedSubmission.attachments">
+            <img [src]="att.dataUrl" [alt]="att.name">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <select [(ngModel)]="reviewForm.status">
+            <option value="in_review">In review</option>
+            <option value="approved">Approved</option>
+            <option value="needs_changes">Needs changes</option>
+          </select>
+        </div>
+
+        <div class="rubric">
+          <h4>Rubric scoring</h4>
+          <div class="rubric-row" *ngFor="let item of reviewForm.rubric; let i = index">
+            <div class="rubric-criterion">{{ item.criterion }}</div>
+            <input type="number" min="0" [max]="item.maxScore" [ngModel]="item.score" (ngModelChange)="updateScore(i, $event)">
+            <span class="muted">/ {{ item.maxScore }}</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Instructor notes</label>
+          <textarea [(ngModel)]="reviewForm.instructorNotes" placeholder="Feedback for the student"></textarea>
+        </div>
+
+        <button class="btn btn-primary" type="button" (click)="saveReview()">Save review</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,319 @@
+<div class="course-details-container" *ngIf="course">
+  <div class="course-header">
+    <div class="breadcrumb">
+      <a routerLink="/courses">Courses</a> / {{course.title}}
+    </div>
+    <h1>{{course.title}}</h1>
+    <p class="subtitle">{{course.subtitle}}</p>
+    <div class="meta">
+      <span class="rating"><span class="material-icons">star_rate</span> {{ ratingSummary.count > 0 ? ratingSummary.average : 'New' }} <span *ngIf="ratingSummary.count > 0">({{ ratingSummary.count }} reviews)</span></span>
+      <span class="students"><span class="material-icons">people</span> {{course.students}} students enrolled</span>
+      <span class="instructor">
+        <span class="material-icons">person</span>
+        by
+        <a class="instructor-link" [routerLink]="['/instructors', course.instructorEmail]">{{course.instructor}}</a>
+      </span>
+    </div>
+  </div>
+
+  <div class="course-content-grid">
+    <div class="main-content">
+      <div class="section">
+        <h2>What you'll learn</h2>
+        <ul class="learning-points">
+          <li *ngFor="let point of course.learningPoints">
+            <span class="material-icons">check_circle</span>
+            <span>{{point}}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>Course Content</h2>
+        <div class="curriculum">
+          <div class="module" *ngFor="let module of course.modules; let i = index">
+            <button type="button" class="module-header" (click)="toggleModule(i)">
+              <h3>{{module.title}}</h3>
+              <span class="module-meta">
+                {{module.lessons}} lessons - {{module.duration}}
+                <span class="material-icons chevron">{{ expandedModuleIndex === i ? 'expand_less' : 'expand_more' }}</span>
+              </span>
+            </button>
+
+            <div class="module-body" *ngIf="expandedModuleIndex === i">
+              <div class="lesson" *ngFor="let l of module.lessonItems">
+                <div class="lesson-left">
+                  <span class="material-icons">play_circle_outline</span>
+                  <div>
+                    <div class="lesson-title">{{ l.title }}</div>
+                    <div class="lesson-sub">{{ l.duration }} <span class="preview" *ngIf="l.isPreview">Preview</span></div>
+                  </div>
+                </div>
+                <button type="button" class="lesson-btn" (click)="startLesson(l.isPreview)">
+                  <span class="material-icons">arrow_forward</span>
+                  <span>Open</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" id="reviews">
+        <h2>Ratings &amp; Reviews</h2>
+        <div class="ratings-grid">
+          <div class="rating-score-card">
+            <div class="rating-score">{{ ratingSummary.count > 0 ? ratingSummary.average : 'New' }}</div>
+            <div class="rating-score-label">Average rating</div>
+            <div class="rating-score-count" *ngIf="ratingSummary.count > 0">{{ ratingSummary.count }} reviews</div>
+          </div>
+          <div class="rating-bars">
+            <div class="rating-row" *ngFor="let star of [5,4,3,2,1]">
+              <span class="star-label">{{ star }} stars</span>
+              <div class="bar">
+                <div class="bar-fill" [style.width.%]="getRatingPercent(star)"></div>
+              </div>
+              <span class="bar-count">{{ ratingSummary.distribution[star] || 0 }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-form" *ngIf="isLoggedIn">
+          <h3>Your rating</h3>
+          <div class="rating-input">
+            <button type="button" class="star-btn" *ngFor="let star of [1,2,3,4,5]" [class.active]="ratingForm.rating >= star" (click)="setRating(star)">
+              <span class="material-icons">star</span>
+            </button>
+          </div>
+          <textarea [(ngModel)]="ratingForm.comment" placeholder="Share what you liked or what could be better (optional)"></textarea>
+          <div class="review-attachments">
+            <label class="btn btn-secondary">
+              <span class="material-icons">attach_file</span>
+              <span>Add images</span>
+              <input type="file" accept="image/*" multiple hidden (change)="onReviewFilesSelected($event)">
+            </label>
+            <div class="attachment-list" *ngIf="ratingForm.attachments.length">
+              <div class="attachment" *ngFor="let att of ratingForm.attachments; let i = index">
+                <img [src]="att.previewUrl" [alt]="att.name">
+                <button type="button" class="attachment-remove" (click)="removeReviewAttachment(i)">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="review-actions">
+            <span class="form-message error" *ngIf="ratingError">{{ ratingError }}</span>
+            <span class="form-message success" *ngIf="ratingInfo">{{ ratingInfo }}</span>
+            <button class="btn btn-primary" type="button" (click)="submitRating()">Submit review</button>
+          </div>
+        </div>
+
+        <div class="reviews" *ngIf="courseReviews.length">
+          <div class="review" *ngFor="let r of courseReviews">
+            <div class="review-head">
+              <div class="reviewer">{{ r.student }}</div>
+              <div class="review-rating"><span class="material-icons">star</span> {{ r.rating }}</div>
+            </div>
+            <p class="review-comment">{{ r.comment }}</p>
+            <div class="review-attachments" *ngIf="r.attachments.length">
+              <div class="attachment" *ngFor="let att of r.attachments">
+                <img [src]="att.url || att.dataUrl" [alt]="att.name">
+              </div>
+            </div>
+            <div class="review-actions-row">
+              <button type="button" class="reaction-btn" [class.active]="hasReacted(r, 'helpful')" (click)="toggleReaction(r.id, 'helpful')">
+                <span class="material-icons">thumb_up</span>
+                Helpful ({{ reactionCount(r, 'helpful') }})
+              </button>
+              <button type="button" class="reaction-btn" [class.active]="hasReacted(r, 'insightful')" (click)="toggleReaction(r.id, 'insightful')">
+                <span class="material-icons">lightbulb</span>
+                Insightful ({{ reactionCount(r, 'insightful') }})
+              </button>
+              <button type="button" class="reaction-btn" [class.active]="hasReacted(r, 'love')" (click)="toggleReaction(r.id, 'love')">
+                <span class="material-icons">favorite</span>
+                Love ({{ reactionCount(r, 'love') }})
+              </button>
+              <button type="button" class="reaction-btn ghost" (click)="toggleReplyForm(r.id)">
+                <span class="material-icons">reply</span>
+                Reply
+              </button>
+            </div>
+            <div class="reply-list" *ngIf="r.replies.length">
+              <div class="reply" *ngFor="let reply of r.replies">
+                <div class="reply-head">
+                  <span class="reply-author">{{ reply.author }}</span>
+                  <span class="reply-date">{{ reply.date }}</span>
+                </div>
+                <p class="reply-body">{{ reply.body }}</p>
+                <div class="review-attachments" *ngIf="reply.attachments.length">
+                  <div class="attachment" *ngFor="let att of reply.attachments">
+                    <img [src]="att.url || att.dataUrl" [alt]="att.name">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="reply-form" *ngIf="replyForms[r.id]?.open">
+              <textarea [(ngModel)]="replyForms[r.id].body" placeholder="Write a reply..."></textarea>
+              <div class="review-attachments">
+                <label class="btn btn-secondary">
+                  <span class="material-icons">attach_file</span>
+                  <span>Add images</span>
+                  <input type="file" accept="image/*" multiple hidden (change)="onReplyFilesSelected(r.id, $event)">
+                </label>
+                <div class="attachment-list" *ngIf="replyForms[r.id].attachments.length">
+                  <div class="attachment" *ngFor="let att of replyForms[r.id].attachments; let i = index">
+                    <img [src]="att.previewUrl" [alt]="att.name">
+                    <button type="button" class="attachment-remove" (click)="removeReplyAttachment(r.id, i)">
+                      <span class="material-icons">close</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="reply-actions">
+                <button type="button" class="btn btn-secondary" (click)="toggleReplyForm(r.id)">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="submitReply(r.id)">Send reply</button>
+              </div>
+            </div>
+            <div class="review-date">{{ r.date }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Description</h2>
+        <p>{{course.description}}</p>
+      </div>
+
+      <div class="section">
+        <h2>Requirements</h2>
+        <ul>
+          <li *ngFor="let req of course.requirements">{{req}}</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="purchase-card">
+        <div class="preview-image">
+          <div class="play-icon">
+            <span class="material-icons">play_circle_filled</span>
+          </div>
+        </div>
+        <div class="price">{{priceLabel}}</div>
+        <button class="btn btn-primary" type="button" (click)="enrollNow()">
+          <span class="material-icons">shopping_cart</span>
+          <span>{{ (pricing.isFree || pricing.priceCents === 0) ? 'Enroll Free' : 'Enroll Now' }}</span>
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="addToCart()">
+          <span class="material-icons">add_shopping_cart</span>
+          <span>Add to Cart</span>
+        </button>
+        
+        <div class="includes">
+          <h4>This course includes:</h4>
+          <ul>
+            <li><span class="material-icons">ondemand_video</span> <span>{{course.videoHours}} hours video</span></li>
+            <li><span class="material-icons">article</span> <span>{{course.articles}} articles</span></li>
+            <li><span class="material-icons">cloud_download</span> <span>{{course.resources}} downloadable resources</span></li>
+            <li><span class="material-icons">assignment_turned_in</span> <span>Final exam + certificate</span></li>
+            <li><span class="material-icons">workspace_premium</span> <span>Certificate of completion</span></li>
+            <li><span class="material-icons">all_inclusive</span> <span>Lifetime access</span></li>
+          </ul>
+        </div>
+
+        <div class="experience">
+          <h4>Experience upgrades</h4>
+          <button class="btn btn-secondary" type="button" (click)="openSkillsPath()">
+            <span class="material-icons">route</span>
+            <span>Skills assessment path</span>
+          </button>
+          <button class="btn btn-secondary" type="button" (click)="openProject()">
+            <span class="material-icons">assignment</span>
+            <span>Completion project</span>
+          </button>
+          <button class="btn btn-secondary" type="button" (click)="openCohort()">
+            <span class="material-icons">groups</span>
+            <span>Cohort mode</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-overlay" *ngIf="showPaymentModal" (click)="closePaymentModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><span class="material-icons">payments</span> Complete Payment</h2>
+      <button class="modal-close" type="button" (click)="closePaymentModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="pay-summary">
+        <div class="row">
+          <span>Course</span>
+          <strong>{{course?.title}}</strong>
+        </div>
+        <div class="row">
+          <span>Price</span>
+          <strong>{{discountedPriceLabel}}</strong>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="paymentMethods.length > 0">
+        <label>Saved Payment Method</label>
+        <select [(ngModel)]="selectedPaymentMethodId">
+          <option [ngValue]="''">Use new card</option>
+          <option *ngFor="let m of paymentMethods" [ngValue]="m.id">{{m.label}}</option>
+        </select>
+      </div>
+
+      <div class="new-card" *ngIf="!selectedPaymentMethodId">
+        <div class="form-group">
+          <label>Name on Card</label>
+          <input type="text" [(ngModel)]="payForm.nameOnCard" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Card Number</label>
+          <input type="text" [(ngModel)]="payForm.cardNumber" placeholder="1234 5678 9012 3456">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Exp Month</label>
+            <input type="number" min="1" max="12" [(ngModel)]="payForm.expMonth">
+          </div>
+          <div class="form-group">
+            <label>Exp Year</label>
+            <input type="number" min="2020" max="2100" [(ngModel)]="payForm.expYear">
+          </div>
+        </div>
+      </div>
+
+      <div class="coupon-row">
+        <div class="form-group">
+          <label>Coupon Code (Optional)</label>
+          <input type="text" [(ngModel)]="payForm.couponCode" placeholder="e.g., NEWYEAR25">
+        </div>
+        <button class="btn btn-secondary" type="button" (click)="applyCoupon()">
+          <span class="material-icons">local_offer</span>
+          Apply
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closePaymentModal()">Cancel</button>
+      <button class="btn btn-primary" type="button" (click)="confirmPaymentAndEnroll()">
+        <span class="material-icons">lock</span>
+        Pay {{discountedPriceLabel}}
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+

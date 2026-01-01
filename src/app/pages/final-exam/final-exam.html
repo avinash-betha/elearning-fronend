@@ -1,0 +1,109 @@
+<div class="exam-page">
+  <div class="header">
+    <div>
+      <h1>Final Exam</h1>
+      <p class="muted">{{ courseTitle }}</p>
+    </div>
+    <div class="pill">Pass score: {{ exam?.passingScore }}%</div>
+  </div>
+
+  <div class="card" *ngIf="loading">Loading exam...</div>
+
+  <div class="card" *ngIf="!loading && !isEligible">
+    <h2>Complete the course first</h2>
+    <p class="muted">Finish all lessons to unlock the final exam.</p>
+    <button class="btn btn-primary" type="button" (click)="openCourse()">Back to course</button>
+  </div>
+
+  <div class="card" *ngIf="!loading && isEligible && exam">
+    <h2>{{ exam.title }}</h2>
+    <p class="muted">Answer every question. You can retake if needed.</p>
+
+    <div class="proctor-card">
+      <div class="proctor-head">
+        <div>
+          <h3>Proctored exam mode</h3>
+          <p class="muted">Webcam consent + tab-switch detection enabled.</p>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" [(ngModel)]="proctorEnabled" (change)="handleProctorToggle()">
+          <span>Enable</span>
+        </label>
+      </div>
+
+      <div *ngIf="proctorEnabled">
+        <label class="consent">
+          <input type="checkbox" [(ngModel)]="proctorConsent">
+          <span>I consent to webcam monitoring during this exam.</span>
+        </label>
+
+        <div class="proctor-actions">
+          <button class="btn btn-primary" type="button" (click)="startProctoring()" [disabled]="proctorStarted">
+            Start proctoring
+          </button>
+          <button class="btn btn-outline" type="button" (click)="stopProctoring()" [disabled]="!proctorStarted">
+            Stop
+          </button>
+          <div class="proctor-status">
+            Warnings: {{ proctorWarnings }}/{{ proctorMaxWarnings + 1 }}
+          </div>
+        </div>
+
+        <div class="proctor-alert" *ngIf="proctorFlagged">
+          Proctoring flagged too many tab switches. Restart the exam to retry.
+        </div>
+
+        <div class="proctor-stream">
+          <video #proctorVideo autoplay muted playsinline></video>
+          <div class="camera-error" *ngIf="cameraError">{{ cameraError }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="certificate-banner" *ngIf="certificate">
+      <div>
+        <strong>Certificate issued</strong>
+        <div class="muted">ID: {{ certificate.id }}</div>
+      </div>
+      <button class="btn btn-outline" type="button" (click)="viewCertificate()">View certificate</button>
+    </div>
+
+    <div class="question" *ngFor="let q of exam.questions">
+      <div class="prompt">{{ q.prompt }}</div>
+      <div class="options">
+        <label
+          class="option"
+          *ngFor="let opt of q.options; let oi = index"
+          [class.selected]="answers[q.id] === oi"
+        >
+          <input
+            type="radio"
+            [name]="q.id"
+            [checked]="answers[q.id] === oi"
+            [disabled]="submitted"
+            (change)="selectAnswer(q.id, oi)"
+          />
+          <span>{{ opt }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="result" *ngIf="submitted">
+      <div class="score" [class.pass]="pass" [class.fail]="!pass">
+        Score: {{ scorePercent }}% - {{ pass ? 'Passed' : 'Not passed yet' }}
+      </div>
+      <p class="muted" *ngIf="pass">Your certificate is now available in Profile.</p>
+      <button class="btn btn-outline" type="button" *ngIf="pass && certificate" (click)="viewCertificate()">
+        View certificate
+      </button>
+      <p class="muted" *ngIf="!pass">Review the material and try again.</p>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-outline" type="button" (click)="openCourse()">Back to course</button>
+      <button class="btn btn-primary" type="button" (click)="submit()" [disabled]="submitted">
+        Submit exam
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,258 @@
+<div class="profile-container">
+  <div class="header">
+    <h1><span class="material-icons">manage_accounts</span> Profile Settings</h1>
+    <p>Manage your personal information and instructor status</p>
+  </div>
+
+  <div class="card" *ngIf="!user && !isAdmin">
+    <h2><span class="material-icons">login</span> Login required</h2>
+    <p class="muted">Please login to view your profile, subscription, and payment methods.</p>
+    <div class="actions">
+      <a class="btn btn-primary" routerLink="/login">
+        <span class="material-icons">login</span>
+        <span>Go to Login</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="grid" *ngIf="isAdmin">
+    <div class="card">
+      <h2><span class="material-icons">admin_panel_settings</span> Admin Profile</h2>
+      <div class="form">
+        <div class="form-group">
+          <label>Display Name</label>
+          <input type="text" [value]="adminProfile.name" disabled>
+        </div>
+        <div class="form-group">
+          <label>Admin Email</label>
+          <input type="email" [value]="adminProfile.email" disabled>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-primary" routerLink="/admin">
+          <span class="material-icons">dashboard</span>
+          <span>Go to Admin Dashboard</span>
+        </a>
+        <a class="btn btn-secondary" routerLink="/support">
+          <span class="material-icons">support_agent</span>
+          <span>Open Support Console</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="material-icons">insights</span> Platform Snapshot</h2>
+      <p class="muted">Quick access to platform health and operational tools.</p>
+      <div class="actions">
+        <a class="btn btn-outline" routerLink="/admin">
+          <span class="material-icons">analytics</span>
+          <span>Analytics</span>
+        </a>
+        <a class="btn btn-outline" routerLink="/admin">
+          <span class="material-icons">campaign</span>
+          <span>Announcements</span>
+        </a>
+        <a class="btn btn-outline" routerLink="/admin">
+          <span class="material-icons">support</span>
+          <span>Support Chats</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" *ngIf="user">
+    <div class="card">
+      <h2><span class="material-icons">person</span> Account</h2>
+
+      <div class="photo-row">
+        <div class="photo">
+          <img *ngIf="photoPreview" [src]="photoPreview" alt="Profile photo">
+          <div *ngIf="!photoPreview" class="photo-placeholder">
+            <span class="material-icons">account_circle</span>
+          </div>
+        </div>
+
+        <div class="photo-actions">
+          <label class="btn btn-secondary">
+            <span class="material-icons">photo_camera</span>
+            <span>Upload Photo</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onPhotoSelected($event)" hidden>
+          </label>
+          <small>JPG/PNG/WebP, max 3MB</small>
+        </div>
+      </div>
+
+      <div class="form">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" [(ngModel)]="form.name" placeholder="Your name">
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" [(ngModel)]="form.email" placeholder="you@example.com">
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-primary" (click)="save()">
+            <span class="material-icons">save</span>
+            <span>Save Changes</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="material-icons">school</span> Instructor Enrollment</h2>
+
+      <div class="status">
+        <div class="status-pill" [class.pending]="instructorStatus==='pending'" [class.approved]="instructorStatus==='approved'" [class.rejected]="instructorStatus==='rejected'">
+          <span class="material-icons">info</span>
+          <span>Status: {{instructorStatus}}</span>
+        </div>
+        <p class="muted" *ngIf="instructorStatus==='none'">
+          Apply to become an instructor by submitting your qualifications and documents.
+        </p>
+        <p class="muted" *ngIf="instructorStatus==='pending'">
+          Your application is under review by the admin.
+        </p>
+        <p class="muted" *ngIf="instructorStatus==='approved'">
+          You are approved as an instructor. Use the instructor dashboard to create and manage courses.
+        </p>
+        <p class="muted" *ngIf="instructorStatus==='rejected'">
+          Your application was rejected. You can re-apply with updated documents.
+        </p>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" (click)="goToInstructorApplication()" *ngIf="instructorStatus!=='approved'">
+          <span class="material-icons">assignment</span>
+          <span>{{ instructorStatus==='pending' ? 'View Application' : 'Apply as Instructor' }}</span>
+        </button>
+        <a class="btn btn-secondary" routerLink="/instructor" *ngIf="instructorStatus==='approved'">
+          <span class="material-icons">dashboard</span>
+          <span>Go to Instructor Dashboard</span>
+        </a>
+        <button type="button" class="btn btn-outline" (click)="viewMyApplication()">
+          <span class="material-icons">visibility</span>
+          <span>Check Status</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="material-icons">workspace_premium</span> Subscription</h2>
+
+      <p class="muted">Choose a membership plan or cancel anytime. Editing is not available.</p>
+
+      <div class="sub-meta" *ngIf="subscription">
+        <div class="meta-row">
+          <span class="muted">Current plan</span>
+          <span class="value">{{ membershipPlanLabel }}</span>
+        </div>
+        <div class="meta-row" *ngIf="subscription.renewsAtIso && isMember">
+          <span class="muted">Renews</span>
+          <span class="value">{{ subscription.renewsAtIso | date:'mediumDate' }}</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" *ngIf="!isMember" (click)="startMembership('monthly')">
+          <span class="material-icons">calendar_month</span>
+          <span>Start Monthly</span>
+        </button>
+        <button type="button" class="btn btn-primary" *ngIf="!isMember" (click)="startMembership('yearly')">
+          <span class="material-icons">event</span>
+          <span>Start Yearly</span>
+        </button>
+        <button type="button" class="btn btn-outline" *ngIf="isMember" (click)="cancelMembership()">
+          <span class="material-icons">cancel</span>
+          <span>Cancel membership</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="material-icons">verified</span> Certificates</h2>
+
+      <div class="cert-list" *ngIf="certificates.length > 0">
+        <div class="cert" *ngFor="let cert of certificates">
+          <div class="cert-main">
+            <div class="cert-title">{{ cert.courseTitle }}</div>
+            <div class="cert-meta">Issued {{ cert.issuedAtIso | date:'mediumDate' }} · Score {{ cert.scorePercent }}%</div>
+            <div class="cert-id">ID: {{ cert.id }}</div>
+          </div>
+          <div class="cert-actions">
+            <button type="button" class="btn btn-outline" (click)="openCertificate(cert.id)">
+              <span class="material-icons">verified</span>
+              <span>Verify</span>
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="copyCertificateId(cert.id)">
+              <span class="material-icons">content_copy</span>
+              <span>Copy ID</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p class="muted" *ngIf="certificates.length === 0">
+        Complete a course and pass the final exam to unlock a certificate.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2><span class="material-icons">credit_card</span> Payment Methods</h2>
+
+      <div class="pm-list" *ngIf="paymentMethods.length > 0">
+        <div class="pm" *ngFor="let m of paymentMethods">
+          <div class="pm-left">
+            <div class="pm-title">{{m.brand}} **** {{m.last4}}</div>
+            <div class="pm-sub">Expires {{m.expMonth}}/{{m.expYear}}</div>
+          </div>
+          <div class="pm-actions">
+            <button type="button" class="btn btn-outline" (click)="removePaymentMethod(m.id)">
+              <span class="material-icons">delete</span>
+              <span>Remove</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p class="muted" *ngIf="paymentMethods.length === 0">No saved payment methods yet.</p>
+
+      <div class="divider"></div>
+
+      <h3 class="section-title">Add a card</h3>
+      <div class="sub-grid">
+        <div class="form-group full">
+          <label>Name on card</label>
+          <input type="text" [(ngModel)]="cardForm.nameOnCard" placeholder="Name as on card">
+        </div>
+
+        <div class="form-group full">
+          <label>Card number</label>
+          <input type="text" [(ngModel)]="cardForm.cardNumber" placeholder="4242 4242 4242 4242">
+        </div>
+
+        <div class="form-group">
+          <label>Exp month</label>
+          <input type="number" min="1" max="12" [(ngModel)]="cardForm.expMonth">
+        </div>
+
+        <div class="form-group">
+          <label>Exp year</label>
+          <input type="number" min="2020" max="2100" [(ngModel)]="cardForm.expYear">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" (click)="addPaymentMethod()">
+          <span class="material-icons">add</span>
+          <span>Add Card</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

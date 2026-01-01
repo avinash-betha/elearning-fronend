@@ -1,0 +1,472 @@
+<div class="admin-container">
+  <div class="welcome-section">
+    <div class="welcome-header">
+      <div>
+        <h1>Welcome back, {{userName}}!</h1>
+        <p>Manage platform users, courses, and settings</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">group</span></div>
+      <div class="stat-content">
+        <h3>{{ totalUsers }}</h3>
+        <p>Total Users</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">menu_book</span></div>
+      <div class="stat-content">
+        <h3>{{ totalCourses }}</h3>
+        <p>Total Courses</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">payments</span></div>
+      <div class="stat-content">
+        <h3>{{ totalRevenueLabel }}</h3>
+        <p>Total Revenue</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-icons">show_chart</span></div>
+      <div class="stat-content">
+        <h3>{{ activeStudents }}</h3>
+        <p>Active Students</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>User Management</h2>
+      <div class="section-actions" *ngIf="showExports">
+        <button class="btn btn-secondary" type="button" (click)="exportUsersCsv()">
+          <span class="material-icons">download</span>
+          Export CSV
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="exportUsersExcel()">
+          <span class="material-icons">table_view</span>
+          Export Excel
+        </button>
+      </div>
+    </div>
+    <div class="filters">
+      <button class="filter-btn" [class.active]="currentFilter === 'all'" (click)="applyFilter('all')">All Users</button>
+      <button class="filter-btn" [class.active]="currentFilter === 'student'" (click)="applyFilter('student')">Students</button>
+      <button class="filter-btn" [class.active]="currentFilter === 'instructor'" (click)="applyFilter('instructor')">Instructors</button>
+      <button class="filter-btn" [class.active]="currentFilter === 'admin'" (click)="applyFilter('admin')">Admins</button>
+    </div>
+    <div class="users-table">
+      <div class="table-header">
+        <span>User</span>
+        <span>Email</span>
+        <span>Role</span>
+        <span>Status</span>
+        <span>Joined</span>
+        <span>Actions</span>
+      </div>
+      <div class="table-row" *ngFor="let user of filteredUsers">
+        <span class="user-name">{{user.name}}</span>
+        <span>{{user.email}}</span>
+        <span class="role-badge" [class]="user.role">{{user.role}}</span>
+        <span class="status-badge" [class]="user.status">{{user.status}}</span>
+        <span>{{user.joined}}</span>
+        <span class="actions">
+          <button class="btn-small" (click)="openEditModal(user)">Edit</button>
+          <button class="btn-small danger" (click)="openSuspendModal(user)" [disabled]="user.status === 'suspended'">Suspend</button>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Instructor Applications</h2>
+      <div class="section-actions" *ngIf="showExports">
+        <button class="btn btn-secondary" type="button" (click)="exportInstructorApplicationsCsv()">
+          <span class="material-icons">download</span>
+          Export CSV
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="exportInstructorApplicationsExcel()">
+          <span class="material-icons">table_view</span>
+          Export Excel
+        </button>
+      </div>
+    </div>
+    <div class="approvals-list" *ngIf="pendingInstructorApplications.length > 0; else noInstructorApps">
+      <div class="approval-item" *ngFor="let app of pendingInstructorApplications">
+        <div class="approval-header">
+          <div class="course-info">
+            <h3>{{app.name}}</h3>
+            <p>{{app.email}}</p>
+          </div>
+          <span class="pending-badge pending">Pending</span>
+        </div>
+        <p><strong>Qualification:</strong> {{app.highestQualification}}</p>
+        <p><strong>Experience:</strong> {{app.yearsOfExperience}} years</p>
+        <p><strong>Expertise:</strong> {{app.expertiseAreas}}</p>
+        <p *ngIf="app.portfolioUrl"><strong>Portfolio:</strong> {{app.portfolioUrl}}</p>
+        <p><strong>Documents:</strong> {{app.documents.length}}</p>
+        <div class="approval-actions">
+          <button class="btn btn-success" (click)="openInstructorApprovalModal(app, 'approve')">Approve</button>
+          <button class="btn btn-danger" (click)="openInstructorApprovalModal(app, 'reject')">Reject</button>
+        </div>
+      </div>
+    </div>
+    <ng-template #noInstructorApps>
+      <p>No pending instructor applications.</p>
+    </ng-template>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Course Approvals</h2>
+      <div class="section-actions" *ngIf="showExports">
+        <button class="btn btn-secondary" type="button" (click)="exportCourseApprovalsCsv()">
+          <span class="material-icons">download</span>
+          Export CSV
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="exportCourseApprovalsExcel()">
+          <span class="material-icons">table_view</span>
+          Export Excel
+        </button>
+      </div>
+    </div>
+    <div class="approvals-list">
+      <div class="approval-item" *ngFor="let approval of pendingApprovals">
+        <div class="approval-header">
+          <div class="course-info">
+            <h3>{{approval.courseTitle}}</h3>
+            <p>by {{approval.instructor}}</p>
+          </div>
+          <span class="pending-badge" [class]="approval.status">{{getApprovalBadgeText(approval.status)}}</span>
+        </div>
+        <p>{{approval.description}}</p>
+        <div class="approval-actions">
+          <button class="btn btn-success" (click)="handleCourseAction(approval, 'approve')" [disabled]="approval.status !== 'pending'">Approve</button>
+          <button class="btn btn-secondary" (click)="handleCourseAction(approval, 'review')" [disabled]="approval.status === 'rejected' || approval.status === 'approved'">Review</button>
+          <button class="btn btn-danger" (click)="handleCourseAction(approval, 'reject')" [disabled]="approval.status !== 'pending'">Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2><span class="material-icons">chat</span> Recent Support Chats</h2>
+      <div class="section-actions" *ngIf="showExports">
+        <button class="btn btn-secondary" type="button" (click)="exportSupportChatsCsv()">
+          <span class="material-icons">download</span>
+          Export CSV
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="exportSupportChatsExcel()">
+          <span class="material-icons">table_view</span>
+          Export Excel
+        </button>
+        <button class="btn-link" type="button" (click)="viewAllChats()">View All</button>
+      </div>
+    </div>
+    <div class="chats-list">
+      <div
+        class="chat-item"
+        *ngFor="let chat of supportChats"
+        [class.unread]="chat.unread"
+        role="button"
+        tabindex="0"
+        (click)="openCourseReview(chat)"
+        (keydown.enter)="openCourseReview(chat)"
+      >
+        <div class="chat-avatar">{{chat.avatar}}</div>
+        <div class="chat-content">
+          <div class="chat-header">
+            <span class="chat-user">{{chat.user}}</span>
+            <span class="chat-time">{{chat.time}}</span>
+          </div>
+          <p class="chat-message">{{chat.message}}</p>
+          <span class="chat-status" [class]="chat.status">{{chat.status}}</span>
+          <span class="chat-course" *ngIf="chat.courseId">Course {{ chat.courseId }}</span>
+        </div>
+        <button class="btn-chat" (click)="openReplyModal(chat); $event.stopPropagation()">
+          <span class="material-icons">reply</span>
+        </button>
+        <button class="btn-chat secondary" (click)="openCourseReview(chat, $event)">
+          <span class="material-icons">reviews</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2><span class="material-icons">campaign</span> Announcements</h2>
+    </div>
+
+    <div class="announcements-admin">
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" [(ngModel)]="announcementForm.title" placeholder="Short title" />
+      </div>
+
+      <div class="form-group">
+        <label>Audience</label>
+        <select [(ngModel)]="announcementForm.audience">
+          <option value="all">All</option>
+          <option value="students">Students</option>
+          <option value="instructors">Instructors</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Target course (optional)</label>
+        <input type="text" [(ngModel)]="announcementForm.courseId" placeholder="Course ID" />
+      </div>
+
+      <div class="form-group">
+        <label>Message</label>
+        <textarea rows="3" [(ngModel)]="announcementForm.body" placeholder="Write the announcement..."></textarea>
+      </div>
+
+      <div class="section-actions">
+        <label class="pin">
+          <input type="checkbox" [(ngModel)]="announcementForm.pinned" />
+          Pin
+        </label>
+        <button class="btn btn-success" type="button" (click)="createAnnouncement()">
+          <span class="material-icons">send</span>
+          Post
+        </button>
+      </div>
+
+      <div class="announcements-list" *ngIf="recentAnnouncements.length > 0">
+        <div class="announcement-item" *ngFor="let a of recentAnnouncements">
+          <div class="announcement-head">
+            <div class="announcement-title">
+              <span class="material-icons" *ngIf="a.pinned" aria-hidden="true">push_pin</span>
+              <span>{{ a.title }}</span>
+              <span class="audience">{{ a.audience }}</span>
+            </div>
+            <button class="btn-small" type="button" (click)="toggleAnnouncementPin(a)">
+              {{ a.pinned ? 'Unpin' : 'Pin' }}
+            </button>
+          </div>
+          <p class="announcement-body">{{ a.body }}</p>
+          <div class="announcement-meta">
+            <span>{{ a.createdAtIso | date: 'mediumDate' }}</span>
+            <span *ngIf="a.courseId">- Course: {{ a.courseId }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Platform Statistics</h2>
+      <div class="section-actions" *ngIf="showExports">
+        <button class="btn btn-secondary" type="button" (click)="exportCommerceEventsCsv()">
+          <span class="material-icons">download</span>
+          Export CSV
+        </button>
+        <button class="btn btn-secondary" type="button" (click)="exportCommerceEventsExcel()">
+          <span class="material-icons">table_view</span>
+          Export Excel
+        </button>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>User Growth</h3>
+        <div class="chart-placeholder"><span class="material-icons">bar_chart</span> Chart Area</div>
+      </div>
+      <div class="chart-card">
+        <h3>Revenue Trend</h3>
+        <div class="chart-placeholder"><span class="material-icons">show_chart</span> Chart Area</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Instructor Application Action Modal -->
+<div class="modal-overlay" *ngIf="showInstructorApprovalModal" (click)="closeInstructorApprovalModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>
+        <span class="material-icons">verified_user</span>
+        {{instructorApprovalAction === 'approve' ? 'Approve' : 'Reject'}} Instructor
+      </h2>
+      <button class="modal-close" (click)="closeInstructorApprovalModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="course-details">
+        <h3>{{selectedInstructorApplication?.name}}</h3>
+        <p>{{selectedInstructorApplication?.email}}</p>
+      </div>
+      <div class="form-group">
+        <label>{{instructorApprovalAction === 'reject' ? 'Rejection Reason *' : 'Notes (Optional)'}}</label>
+        <textarea
+          [(ngModel)]="instructorAdminNotes"
+          rows="4"
+          [placeholder]="instructorApprovalAction === 'reject' ? 'Explain why this application is being rejected...' : 'Add any notes...'"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeInstructorApprovalModal()">Cancel</button>
+      <button
+        class="btn"
+        [class.btn-success]="instructorApprovalAction === 'approve'"
+        [class.btn-danger]="instructorApprovalAction === 'reject'"
+        (click)="confirmInstructorApprovalAction()">
+        Confirm
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><span class="material-icons">edit</span> Edit User</h2>
+      <button class="modal-close" (click)="closeEditModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" [(ngModel)]="editForm.name" placeholder="Enter user name">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" [(ngModel)]="editForm.email" placeholder="Enter email address">
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select [(ngModel)]="editForm.role">
+          <option value="student">Student</option>
+          <option value="instructor">Instructor</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select [(ngModel)]="editForm.status">
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="saveEditUser()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Suspend User Modal -->
+<div class="modal-overlay" *ngIf="showSuspendModal" (click)="closeSuspendModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><span class="material-icons">block</span> Suspend User</h2>
+      <button class="modal-close" (click)="closeSuspendModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="warning-text">
+        <span class="material-icons">warning</span>
+        You are about to suspend <strong>{{selectedUser?.name}}</strong>. This user will lose access to the platform.
+      </p>
+      <div class="form-group">
+        <label>Reason for Suspension *</label>
+        <textarea [(ngModel)]="suspendReason" rows="4" placeholder="Please provide a detailed reason for suspending this user..." required></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeSuspendModal()">Cancel</button>
+      <button class="btn btn-danger" (click)="confirmSuspend()">Confirm Suspension</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reply to Support Chat Modal -->
+<div class="modal-overlay" *ngIf="showReplyModal" (click)="closeReplyModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><span class="material-icons">reply</span> Reply to {{selectedChat?.user}}</h2>
+      <button class="modal-close" (click)="closeReplyModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="chat-original">
+        <p class="label">Original Message:</p>
+        <p class="message">{{selectedChat?.message}}</p>
+        <span class="chat-status" [class]="selectedChat?.status">{{selectedChat?.status}}</span>
+      </div>
+      <div class="form-group">
+        <label>Your Reply *</label>
+        <textarea [(ngModel)]="replyMessage" rows="5" placeholder="Type your reply here..." required></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeReplyModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="sendReply()">
+        <span class="material-icons">send</span> Send Reply
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Course Approval Action Modal -->
+<div class="modal-overlay" *ngIf="showApprovalModal" (click)="closeApprovalModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>
+        <span class="material-icons">{{approvalAction === 'approve' ? 'check_circle' : approvalAction === 'reject' ? 'cancel' : 'rate_review'}}</span>
+        {{approvalAction === 'approve' ? 'Approve' : approvalAction === 'reject' ? 'Reject' : 'Review'}} Course
+      </h2>
+      <button class="modal-close" (click)="closeApprovalModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="course-details">
+        <h3>{{selectedApproval?.courseTitle}}</h3>
+        <p>by {{selectedApproval?.instructor}}</p>
+        <p class="description">{{selectedApproval?.description}}</p>
+      </div>
+      <div class="form-group">
+        <label>{{approvalAction === 'reject' ? 'Rejection Reason *' : 'Notes (Optional)'}}</label>
+        <textarea [(ngModel)]="approvalNotes" rows="4" 
+          [placeholder]="approvalAction === 'reject' ? 'Explain why this course is being rejected...' : 'Add any notes or feedback...'"
+          [required]="approvalAction === 'reject'"></textarea>
+      </div>
+      <p class="warning-text" *ngIf="approvalAction === 'approve'">
+        <span class="material-icons">info</span>
+        This course will be published and made available to all students.
+      </p>
+      <p class="warning-text" *ngIf="approvalAction === 'reject'">
+        <span class="material-icons">warning</span>
+        The instructor will be notified about the rejection with your reason.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeApprovalModal()">Cancel</button>
+      <button class="btn" 
+        [class.btn-success]="approvalAction === 'approve'"
+        [class.btn-danger]="approvalAction === 'reject'"
+        [class.btn-primary]="approvalAction === 'review'"
+        (click)="confirmApprovalAction()">
+        Confirm {{approvalAction === 'approve' ? 'Approval' : approvalAction === 'reject' ? 'Rejection' : 'Review'}}
+      </button>
+    </div>
+  </div>
+</div>
+
+

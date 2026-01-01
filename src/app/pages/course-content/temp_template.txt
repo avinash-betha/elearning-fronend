@@ -1,0 +1,302 @@
+    <div class="course-content-container">
+      <div class="course-header-bar">
+        <div class="course-title">
+          <a routerLink="/enrolled-courses" class="back-btn"> Back</a>
+          <h2>Complete Web Development Bootcamp</h2>
+        </div>
+        <div class="progress-info">
+          <span>Progress: 65%</span>
+        </div>
+      </div>
+
+      <div class="content-layout">
+        <aside class="sidebar">
+          <h3>Course Content</h3>
+          <div class="curriculum">
+            <div class="module" *ngFor="let module of modules">
+              <div class="module-header">
+                <span class="module-title">{{module.title}}</span>
+                <span class="module-count">{{module.completedLessons}}/{{module.totalLessons}}</span>
+              </div>
+              <div class="lessons">
+                <div class="lesson" *ngFor="let lesson of module.lessons" 
+                     [class.completed]="lesson.completed"
+                     [class.active]="lesson.active">
+                  <span class="lesson-icon">{{lesson.completed ? '' : ''}}</span>
+                  <span class="lesson-title">{{lesson.title}}</span>
+                  <span class="lesson-duration">{{lesson.duration}}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <main class="video-area">
+          <div class="video-player">
+            <div class="video-placeholder">
+              <div class="play-button"></div>
+              <p>Video Player</p>
+            </div>
+          </div>
+
+          <div class="lesson-details">
+            <h1>Introduction to JavaScript</h1>
+            <div class="lesson-meta">
+              <span> 15:30</span>
+              <span>Updated 2 weeks ago</span>
+            </div>
+
+            <div class="tabs">
+              <button class="tab active">Overview</button>
+              <button class="tab">Resources</button>
+              <button class="tab">Q&A</button>
+              <button class="tab">Notes</button>
+            </div>
+
+            <div class="lesson-content">
+              <h3>Lesson Overview</h3>
+              <p>In this lesson, you'll learn the fundamentals of JavaScript, including variables, data types, and basic operators. We'll cover how JavaScript works in the browser and write your first JavaScript program.</p>
+              
+              <h3>What You'll Learn</h3>
+              <ul>
+                <li>Understanding JavaScript basics</li>
+                <li>Variables and data types</li>
+                <li>Operators and expressions</li>
+                <li>Writing your first program</li>
+              </ul>
+
+              <h3>Resources</h3>
+              <div class="resources">
+                <a href="#" class="resource-link"> Lesson slides (PDF)</a>
+                <a href="#" class="resource-link"> Code examples</a>
+                <a href="#" class="resource-link"> Exercise files</a>
+              </div>
+            </div>
+
+            <div class="lesson-navigation">
+              <button class="btn btn-secondary"> Previous Lesson</button>
+              <button class="btn btn-primary">Next Lesson </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .course-content-container {
+      max-width: 100%;
+      margin: 0;
+    }
+
+    .course-header-bar {
+      background: white;
+      padding: 16px 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0;
+    }
+
+    .course-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      color: #1f6a5a;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .course-title h2 {
+      font-size: 20px;
+      color: #333;
+      margin: 0;
+    }
+
+    .progress-info {
+      font-size: 14px;
+      color: #1f6a5a;
+      font-weight: 600;
+    }
+
+    .content-layout {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      height: calc(100vh - 240px);
+    }
+
+    .sidebar {
+      background: white;
+      border-right: 1px solid #eee;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .sidebar h3 {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .curriculum {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .module-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #f8f9ff;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    .module-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .module-count {
+      font-size: 12px;
+      color: #1f6a5a;
+    }
+
+    .lessons {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .lesson {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .lesson:hover {
+      background: #f8f9ff;
+    }
+
+    .lesson.active {
+      background: #f8f9ff;
+      border-left: 3px solid #1f6a5a;
+    }
+
+    .lesson.completed .lesson-icon {
+      color: #4caf50;
+    }
+
+    .lesson-icon {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .lesson-title {
+      flex: 1;
+      font-size: 13px;
+      color: #333;
+    }
+
+    .lesson-duration {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .video-area {
+      background: #f5f7fa;
+      overflow-y: auto;
+    }
+
+    .video-player {
+      background: #000;
+      aspect-ratio: 16/9;
+      width: 100%;
+      max-height: 600px;
+    }
+
+    .video-placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .play-button {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .play-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    .lesson-details {
+      background: white;
+      padding: 32px;
+    }
+
+    .lesson-details h1 {
+      font-size: 32px;
+      color: #333;
+      margin-bottom: 12px;
+    }
+
+    .lesson-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid #eee;
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab.active {
+      color: #1f6a5a;
+      border-bottom-color: #1f6a5a;
+    }
+
+    .lesson-content {
+
+

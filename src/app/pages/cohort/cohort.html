@@ -1,0 +1,75 @@
+<div class="cohort-page" *ngIf="cohort">
+  <div class="header">
+    <div>
+      <h1>{{ cohort.cohortName }}</h1>
+      <p class="muted">{{ courseTitle }} · {{ cohort.membersCount }} learners</p>
+    </div>
+    <a class="btn btn-secondary" [routerLink]="['/courses', courseId]">Back to course</a>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Live sessions</h2>
+      <div class="session" *ngFor="let session of cohort.sessions">
+        <div>
+          <div class="session-title">{{ session.title }}</div>
+          <div class="muted">{{ session.startsAtIso | date:'medium' }} · {{ session.durationMinutes }} min</div>
+          <div class="muted">Host: {{ session.hostName }}</div>
+        </div>
+        <button type="button" class="btn btn-primary">Add to calendar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Peer feedback lounge</h2>
+      <div class="post-form">
+        <textarea [(ngModel)]="message" placeholder="Share progress, ask for feedback, or post a milestone."></textarea>
+        <div class="form-actions">
+          <label class="btn btn-secondary">
+            <span class="material-icons">attach_file</span>
+            <span>Add images</span>
+            <input type="file" accept="image/*" multiple hidden (change)="onFilesSelected($event)">
+          </label>
+          <button type="button" class="btn btn-primary" (click)="postMessage()">Post update</button>
+        </div>
+        <div class="attachment-list" *ngIf="attachments.length">
+          <div class="attachment" *ngFor="let att of attachments; let i = index">
+            <img [src]="att.dataUrl" [alt]="att.name">
+            <button type="button" class="attachment-remove" (click)="removeAttachment(i)">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="post" *ngFor="let post of cohort.posts">
+        <div class="post-head">
+          <div>
+            <strong>{{ post.authorName }}</strong>
+            <div class="muted">{{ post.createdAtIso | date:'medium' }}</div>
+          </div>
+        </div>
+        <p>{{ post.message }}</p>
+        <div class="attachment-list" *ngIf="post.attachments.length">
+          <div class="attachment" *ngFor="let att of post.attachments">
+            <img [src]="att.dataUrl" [alt]="att.name">
+          </div>
+        </div>
+        <div class="post-reactions">
+          <button type="button" class="reaction-btn" (click)="toggleReaction(post.id, 'support')">
+            <span class="material-icons">volunteer_activism</span>
+            Support ({{ reactionCount(post, 'support') }})
+          </button>
+          <button type="button" class="reaction-btn" (click)="toggleReaction(post.id, 'insight')">
+            <span class="material-icons">lightbulb</span>
+            Insight ({{ reactionCount(post, 'insight') }})
+          </button>
+          <button type="button" class="reaction-btn" (click)="toggleReaction(post.id, 'celebrate')">
+            <span class="material-icons">celebration</span>
+            Celebrate ({{ reactionCount(post, 'celebrate') }})
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

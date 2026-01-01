@@ -1,0 +1,24 @@
+<div class="verify-page">
+  <div class="header">
+    <h1>Verify Certificate</h1>
+    <p class="muted">Enter a certificate ID to confirm authenticity.</p>
+  </div>
+
+  <div class="card">
+    <div class="form">
+      <input type="text" [(ngModel)]="inputId" placeholder="Certificate ID">
+      <button class="btn btn-primary" type="button" (click)="lookup()">Verify</button>
+    </div>
+
+    <div class="error" *ngIf="error">{{ error }}</div>
+
+    <div class="result" *ngIf="certificate">
+      <div class="badge">Valid Certificate</div>
+      <h2>{{ certificate.userName }}</h2>
+      <p class="muted">Course: {{ certificate.courseTitle }}</p>
+      <p class="muted">Issued: {{ certificate.issuedAtIso | date:'mediumDate' }}</p>
+      <p class="muted">Score: {{ certificate.scorePercent }}%</p>
+      <p class="muted">Certificate ID: {{ certificate.id }}</p>
+    </div>
+  </div>
+</div>

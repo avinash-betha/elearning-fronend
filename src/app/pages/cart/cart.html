@@ -1,0 +1,227 @@
+<div class="cart-shell">
+  <section class="cart-hero">
+    <div class="hero-content">
+      <div class="hero-pill">Learning kit</div>
+      <h1>Your learning cart</h1>
+      <p>Curate your next learning sprint with clear pricing and instant checkout.</p>
+    </div>
+    <div class="hero-badges">
+      <div class="badge-card">
+        <span class="material-icons">verified</span>
+        <div>
+          <div class="badge-title">Secure checkout</div>
+          <div class="muted">Protected payments + saved cards</div>
+        </div>
+      </div>
+      <div class="badge-card">
+        <span class="material-icons">auto_awesome</span>
+        <div>
+          <div class="badge-title">Instant access</div>
+          <div class="muted">Start learning right away</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="cart-grid">
+    <section class="cart-main">
+      <div class="card welcome" *ngIf="!isLoggedIn">
+        <div>
+          <h2>Sign in to unlock checkout</h2>
+          <p class="muted">Login to view, edit, and finalize your learning kit.</p>
+        </div>
+        <button class="btn btn-primary" type="button" (click)="login()">
+          <span class="material-icons">login</span>
+          Login
+        </button>
+      </div>
+
+      <div class="card" *ngIf="isLoggedIn">
+        <div *ngIf="items.length === 0" class="empty">
+          <div class="empty-illustration">
+            <span class="material-icons">shopping_bag</span>
+          </div>
+          <div>
+            <p class="muted">Your cart is empty.</p>
+            <p class="muted">Pick a course to build your learning kit.</p>
+          </div>
+          <a class="btn btn-secondary" routerLink="/courses">
+            <span class="material-icons">menu_book</span>
+            Browse Courses
+          </a>
+        </div>
+
+        <div class="kit-list" *ngIf="items.length > 0">
+          <div class="kit-item" *ngFor="let item of items">
+            <div class="item-band"></div>
+            <div class="item-body">
+              <div class="item-title">{{item.course?.title || ('Course #' + item.courseId)}}</div>
+              <div class="item-sub">Added {{ item.addedAtIso | date:'mediumDate' }}</div>
+              <div class="badge-row">
+                <span *ngIf="item.course?.isMandatoryOrg" class="pill">Mandatory</span>
+                <span *ngIf="item.isEnrolled" class="pill success">Already enrolled</span>
+                <span class="price">{{ item.course?.isFree ? 'Free' : ('$' + ((item.course?.priceCents || 0) / 100).toFixed(2)) }}</span>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn btn-secondary" type="button" (click)="goToCourse(item.courseId)">
+                <span class="material-icons">open_in_new</span>
+                View
+              </button>
+              <button class="btn btn-outline" type="button" (click)="remove(item.courseId)">
+                <span class="material-icons">delete</span>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="cart-summary" *ngIf="isLoggedIn">
+      <div class="summary-card">
+        <div class="summary-head">
+          <h3>Order overview</h3>
+          <span class="muted">{{ items.length }} items</span>
+        </div>
+        <div class="summary-row">
+          <span class="muted">Subtotal</span>
+          <span class="summary-amount">{{ formatMoney(subtotalCents) }}</span>
+        </div>
+        <div class="summary-row" *ngIf="!hasPaidItems && items.length > 0">
+          <span class="pill success">Only free courses</span>
+        </div>
+        <button class="btn btn-primary" type="button" (click)="openCheckout()" [disabled]="items.length === 0">
+          <span class="material-icons">payments</span>
+          Checkout
+        </button>
+        <div class="summary-note">
+          <span class="material-icons">shield</span>
+          Secure checkout with saved payment methods.
+        </div>
+      </div>
+
+      <div class="summary-card accent">
+        <h4>Learning bundle perks</h4>
+        <ul>
+          <li>Priority support + weekly progress insights</li>
+          <li>Skill gap tracking in your dashboard</li>
+          <li>Certificate pathways unlocked on completion</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="checkoutOpen" (click)="closeCheckout()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><span class="material-icons">payments</span> Checkout</h2>
+      <button class="icon-btn" type="button" (click)="closeCheckout()" [disabled]="isProcessing">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="checkout-lines">
+        <div class="line" *ngFor="let line of checkoutLines">
+          <div class="line-left">
+            <div class="line-title">{{ line.title }}</div>
+            <div class="line-meta">
+              <span class="pill" *ngIf="line.isEnrolled">Already enrolled</span>
+              <span class="pill" *ngIf="line.isFree && !line.isEnrolled">Free</span>
+            </div>
+          </div>
+
+          <div class="line-right">
+            <div class="line-price">
+              <span class="muted" *ngIf="!line.isFree">{{ formatMoney(line.basePriceCents, line.currency) }}</span>
+              <span class="final">{{ line.isFree ? 'Free' : formatMoney(line.finalPriceCents, line.currency) }}</span>
+            </div>
+
+            <div class="coupon" *ngIf="!line.isEnrolled && !line.isFree">
+              <input
+                class="input"
+                type="text"
+                placeholder="Coupon code"
+                [(ngModel)]="line.couponCode"
+                (blur)="applyCoupon(line)"
+                [disabled]="isProcessing"
+              />
+              <button class="btn btn-outline" type="button" (click)="applyCoupon(line)" [disabled]="isProcessing">
+                Apply
+              </button>
+            </div>
+            <div class="error" *ngIf="line.couponError">{{ line.couponError }}</div>
+            <div class="ok" *ngIf="line.coupon && !line.couponError">Applied: {{ line.coupon.code }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="payment" *ngIf="totalPayableCents > 0">
+        <h3>Payment method</h3>
+
+        <div class="method-toggle" *ngIf="methods.length">
+          <label class="radio">
+            <input type="radio" name="method" [(ngModel)]="useNewCard" [value]="false" [disabled]="isProcessing" />
+            <span>Use saved card</span>
+          </label>
+          <label class="radio">
+            <input type="radio" name="method" [(ngModel)]="useNewCard" [value]="true" [disabled]="isProcessing" />
+            <span>Add new card</span>
+          </label>
+        </div>
+
+        <div *ngIf="!useNewCard && methods.length" class="saved-methods">
+          <select class="select" [(ngModel)]="selectedMethodId" [disabled]="isProcessing">
+            <option *ngFor="let m of methods" [value]="m.id">
+              {{m.brand}} **** {{m.last4}} ({{m.expMonth}}/{{m.expYear}})
+            </option>
+          </select>
+        </div>
+
+        <div *ngIf="useNewCard" class="new-card">
+          <div class="grid">
+            <div class="field">
+              <label>Name on card</label>
+              <input class="input" type="text" [(ngModel)]="newCard.nameOnCard" [disabled]="isProcessing" />
+            </div>
+            <div class="field">
+              <label>Card number</label>
+              <input class="input" type="text" [(ngModel)]="newCard.cardNumber" [disabled]="isProcessing" />
+            </div>
+            <div class="field">
+              <label>Exp month</label>
+              <input class="input" type="number" min="1" max="12" [(ngModel)]="newCard.expMonth" [disabled]="isProcessing" />
+            </div>
+            <div class="field">
+              <label>Exp year</label>
+              <input class="input" type="number" min="2020" max="2100" [(ngModel)]="newCard.expYear" [disabled]="isProcessing" />
+            </div>
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" [(ngModel)]="saveNewCard" [disabled]="isProcessing" />
+            <span>Save this card</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="totals">
+        <div class="totals-row">
+          <span class="muted">Total</span>
+          <span class="totals-amount">{{ formatMoney(totalPayableCents) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" type="button" (click)="closeCheckout()" [disabled]="isProcessing">Cancel</button>
+      <button class="btn btn-primary" type="button" (click)="confirmCheckout()" [disabled]="isProcessing">
+        <span class="material-icons">task_alt</span>
+        {{ isProcessing ? 'Processing...' : 'Confirm & Enroll' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+
